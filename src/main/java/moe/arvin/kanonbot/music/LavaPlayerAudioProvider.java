@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 
-@Component
 public final class LavaPlayerAudioProvider extends AudioProvider {
 
     private final AudioPlayer player;

@@ -24,12 +24,12 @@ public class BotConfiguration {
     private String token;
 
     @Bean
-    public AudioPlayer audioPlayer() {
+    public AudioPlayerManager audioPlayerManager() {
         final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
         playerManager.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
         AudioSourceManagers.registerRemoteSources(playerManager);
         AudioSourceManagers.registerLocalSource(playerManager);
-        return playerManager.createPlayer();
+        return playerManager;
     }
 
     @Bean
