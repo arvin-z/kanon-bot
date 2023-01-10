@@ -28,8 +28,6 @@ public class PlayCommand implements Command {
     @Override
     public Mono<Void> handle(Message message) {
         return message.getAuthorAsMember()
-                .flatMap(Member::getVoiceState)
-                .flatMap(VoiceState::getChannel)
                 .doOnSuccess(vcHandler::handlePlay)
                 .then();
     }

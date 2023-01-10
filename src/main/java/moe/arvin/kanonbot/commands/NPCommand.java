@@ -6,23 +6,23 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
-public class QueueCommand implements Command {
+public class NPCommand implements Command {
 
     private final GuildAudioManager gAM;
 
-    public QueueCommand(GuildAudioManager guildAudioManager) {
+    public NPCommand(GuildAudioManager guildAudioManager) {
         this.gAM = guildAudioManager;
     }
 
     @Override
     public String getName() {
-        return "queue";
+        return "np";
     }
 
     @Override
     public Mono<Void> handle(Message message) {
         return message.getChannel()
-                .flatMap(channel -> channel.createMessage(gAM.getScheduler().queueToString()))
+                .flatMap(channel -> channel.createMessage(gAM.getScheduler().nowPlayingToEmbed()))
                 .then();
     }
 }

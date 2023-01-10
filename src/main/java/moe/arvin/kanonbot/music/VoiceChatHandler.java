@@ -5,6 +5,8 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import discord4j.core.object.VoiceState;
+import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.voice.AudioProvider;
 import discord4j.voice.VoiceConnection;
@@ -35,12 +37,21 @@ public class VoiceChatHandler {
 
     public void leaveVoiceChannel() {
         if (connection != null && Boolean.TRUE.equals(connection.isConnected().block())) {
+            // pause player
             connection.disconnect().block();
             voiceChannelJoined = false;
         }
     }
     
-    public void handlePlay(VoiceChannel vc) {
+    public void handlePlay(Member mem) {
+        VoiceState vs = mem.getVoiceState().block();
+        if (vs == null) {
+            return;
+        }
+        VoiceChannel vc = vs.getChannel().block();
+        if (vc == null) {
+            return;
+        }
         if (connection == null) {
             joinVoiceChannel(vc);
         } else if (!vc.getId().equals(connection.getChannelId().block())) {
@@ -49,7 +60,7 @@ public class VoiceChatHandler {
         audioPlayerManager.loadItem("https://www.youtube.com/watch?v=9lNZ_Rnr7Jc", new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack audioTrack) {
-                gAM.getScheduler().play(audioTrack);
+                gAM.getScheduler().play(audioTrack, mem);
             }
 
             @Override
