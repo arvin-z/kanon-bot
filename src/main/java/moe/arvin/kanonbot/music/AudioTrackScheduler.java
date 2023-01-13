@@ -125,6 +125,22 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
+    public boolean pause() {
+        if (isPlaying()) {
+            player.setPaused(true);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean unpause() {
+        if (isPlaying()) {
+            player.setPaused(false);
+            return true;
+        }
+        return false;
+    }
+
     public boolean skip() {
         if (!queue.isEmpty()) {
             if (nowPlayingIdx < queue.size()-1 && nowPlayingIdx >= 0) {
@@ -135,6 +151,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             } else if (nowPlayingIdx >= queue.size()-1) {
                 stop();
                 nowPlayingIdx = -1;
+                return true;
             }
         }
         return false;

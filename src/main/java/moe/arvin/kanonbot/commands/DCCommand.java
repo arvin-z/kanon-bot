@@ -1,6 +1,7 @@
 package moe.arvin.kanonbot.commands;
 
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.reaction.ReactionEmoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.VoiceChatHandler;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ public class DCCommand implements Command{
     @Override
     public Mono<Void> handle(Message message, String msgArg) {
         vcHandler.leaveVoiceChannel();
-        return Mono.empty();
+        return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4B"))
+                .then();
     }
 }

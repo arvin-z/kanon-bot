@@ -1,14 +1,9 @@
 package moe.arvin.kanonbot.commands;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import discord4j.core.object.VoiceState;
-import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.EmbedCreateSpec;
 import moe.arvin.kanonbot.music.GuildAudioManager;
-import moe.arvin.kanonbot.music.TextChatHandler;
 import moe.arvin.kanonbot.music.VoiceChatHandler;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -34,12 +29,17 @@ public class PlayCommand implements Command {
         MessageChannel chan = getChannel(message);
         return message.getAuthorAsMember()
                 .doOnSuccess(member -> {
-                    vcHandler.handlePlay(member, msgArg, chan);
+                    if (!vcHandler.handlePlay(member, msgArg, chan))
+                        addMsgReaction(message);
                 })
                 .then();
     }
 
     public MessageChannel getChannel(Message message) {
         return message.getChannel().block();
+    }
+
+    public void addMsgReaction(Message message) {
+        message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C")).block();
     }
 }

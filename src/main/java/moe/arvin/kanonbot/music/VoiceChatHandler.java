@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -31,6 +32,19 @@ public class VoiceChatHandler {
         this.gAM = guildAudioManager;
         this.textChan = this.gAM.getTextChatHandler();
         this.audioPlayerManager = audioPlayerManager;
+    }
+
+    public boolean userInVoiceChannelFromMsg(Message m) {
+        Member gM = m.getAuthorAsMember().block();
+        if (gM == null) {
+            return false;
+        }
+        VoiceState vs = gM.getVoiceState().block();
+        if (vs == null) {
+            return false;
+        }
+        VoiceChannel vc = vs.getChannel().block();
+        return vc != null;
     }
 
     public boolean joinVoiceChannel(VoiceChannel vc) {
