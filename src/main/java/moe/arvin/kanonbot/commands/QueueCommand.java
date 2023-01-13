@@ -20,7 +20,7 @@ public class QueueCommand implements Command {
     }
 
     @Override
-    public Mono<Void> handle(Message message) {
+    public Mono<Void> handle(Message message, String msgArg) {
         return message.getChannel()
                 .flatMap(channel -> channel.createMessage(gAM.getScheduler().queueToString()))
                 .then();

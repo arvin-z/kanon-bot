@@ -43,15 +43,15 @@ public class CommandListener implements EventListener<MessageCreateEvent> {
         // create cmd name and args list
         String[] cmdSplit = msgContent.substring(1).trim().split(" ");
         String cmdName = cmdSplit[0];
-        String[] cmdArgs = Arrays.copyOfRange(cmdSplit, 1, cmdSplit.length);
+        String cmdArgs = String.join(" ", Arrays.copyOfRange(cmdSplit, 1, cmdSplit.length));
 
         return processCmd(cmdName, cmdArgs, event.getMessage());
     }
 
-    public Mono<Void> processCmd(String cmdName, String[] cmdArgs, Message eventMessage) {
+    public Mono<Void> processCmd(String cmdName, String cmdArgs, Message eventMessage) {
         return Flux.fromIterable(commands)
                 .filter(command -> command.getName().equalsIgnoreCase(cmdName))
                 .next()
-                .flatMap(command -> command.handle(eventMessage));
+                .flatMap(command -> command.handle(eventMessage, cmdArgs));
     }
 }

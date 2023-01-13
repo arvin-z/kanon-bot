@@ -1,6 +1,7 @@
 package moe.arvin.kanonbot.commands;
 
 import discord4j.core.object.entity.Message;
+import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.VoiceChatHandler;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -10,8 +11,8 @@ public class DCCommand implements Command{
 
     private final VoiceChatHandler vcHandler;
 
-    public DCCommand(VoiceChatHandler voiceChatHandler) {
-        this.vcHandler = voiceChatHandler;
+    public DCCommand(GuildAudioManager guildAudioManager) {
+        this.vcHandler = guildAudioManager.getVoiceChatHandler();
     }
 
     @Override
@@ -20,7 +21,7 @@ public class DCCommand implements Command{
     }
 
     @Override
-    public Mono<Void> handle(Message message) {
+    public Mono<Void> handle(Message message, String msgArg) {
         vcHandler.leaveVoiceChannel();
         return Mono.empty();
     }

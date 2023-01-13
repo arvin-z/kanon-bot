@@ -25,11 +25,15 @@ public final class GuildAudioManager {
     private AudioPlayer player;
     private AudioTrackScheduler scheduler;
     private LavaPlayerAudioProvider provider;
+    private TextChatHandler textChatHandler;
+    private VoiceChatHandler voiceChatHandler;
 
     @PostConstruct
     private void init() {
+        textChatHandler = new TextChatHandler();
+        voiceChatHandler = new VoiceChatHandler(this, audioPlayerManager);
         player = audioPlayerManager.createPlayer();
-        scheduler = new AudioTrackScheduler(player);
+        scheduler = new AudioTrackScheduler(player, textChatHandler);
         provider = new LavaPlayerAudioProvider(player);
         player.addListener(scheduler);
     }
@@ -44,5 +48,13 @@ public final class GuildAudioManager {
 
     public LavaPlayerAudioProvider getProvider() {
         return provider;
+    }
+
+    public TextChatHandler getTextChatHandler() {
+        return textChatHandler;
+    }
+
+    public VoiceChatHandler getVoiceChatHandler() {
+        return voiceChatHandler;
     }
 }

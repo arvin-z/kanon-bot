@@ -4,6 +4,10 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.spec.EmbedCreateSpec;
+import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.TextChatHandler;
 import moe.arvin.kanonbot.music.VoiceChatHandler;
 import org.springframework.stereotype.Component;
@@ -13,11 +17,11 @@ import reactor.core.publisher.Mono;
 public class PlayCommand implements Command {
 
     private final VoiceChatHandler vcHandler;
-    private final TextChatHandler chatHandler;
+//    private final TextChatHandler chatHandler;
 
-    public PlayCommand(VoiceChatHandler voiceChatHandler, TextChatHandler textChatHandler) {
-        this.vcHandler = voiceChatHandler;
-        this.chatHandler = textChatHandler;
+    public PlayCommand(GuildAudioManager guildAudioManager) {
+        this.vcHandler = guildAudioManager.getVoiceChatHandler();
+//        this.chatHandler = guildAudioManager.getTextChatHandler();
     }
 
     @Override
@@ -26,9 +30,16 @@ public class PlayCommand implements Command {
     }
 
     @Override
-    public Mono<Void> handle(Message message) {
+    public Mono<Void> handle(Message message, String msgArg) {
+        MessageChannel chan = getChannel(message);
         return message.getAuthorAsMember()
-                .doOnSuccess(vcHandler::handlePlay)
+                .doOnSuccess(member -> {
+                    vcHandler.handlePlay(member, msgArg, chan);
+                })
                 .then();
+    }
+
+    public MessageChannel getChannel(Message message) {
+        return message.getChannel().block();
     }
 }

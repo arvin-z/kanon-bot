@@ -6,5 +6,5 @@ import reactor.core.publisher.Mono;
 public interface Command {
     String getName();
 
-    Mono<Void> handle(Message message);
+    Mono<Void> handle(Message message, String msgArg);
 }

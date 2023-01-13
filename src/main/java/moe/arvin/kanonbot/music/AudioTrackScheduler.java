@@ -5,8 +5,11 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
+import jakarta.annotation.PostConstruct;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -19,10 +22,14 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     private int nowPlayingIdx;
     private final AudioPlayer player;
 
-    public AudioTrackScheduler(final AudioPlayer player) {
+    private TextChatHandler textChat;
+    Message playStartMsg;
+
+    public AudioTrackScheduler(final AudioPlayer player, TextChatHandler txtChat) {
         nowPlayingIdx = -1;
         queue = Collections.synchronizedList(new ArrayList<>());
         this.player = player;
+        this.textChat = txtChat;
     }
 
     public List<AudioTrack> getQueue() {
@@ -79,25 +86,37 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
-    public boolean play(final AudioTrack track, Member mem) {
-        track.setUserData(mem.getId().asString());
-        return play(track, false);
+    public boolean playFromStart() {
+        if (queue.size() > 0) {
+            if (play(queue.get(0), true, false)) {
+                nowPlayingIdx = 0;
+                return true;
+            }
+        }
+        return false;
     }
 
-    public boolean play(final AudioTrack track, final boolean force) {
-        queue.add(track);
-        final boolean playing = player.startTrack(track, !force);
+    public boolean play(final AudioTrack track, Member mem) {
+        track.setUserData(mem.getId().asString());
+        return play(track, false, true);
+    }
 
-        if (playing) {
-            this.nowPlayingIdx = queue.size() - 1;
+    public boolean play(final AudioTrack track, final boolean force, final boolean addToQueue) {
+        if (addToQueue) {
+            queue.add(track);
+        }
+        if (queue.size() == 1) {
+            this.nowPlayingIdx = 0;
+        } else if (nowPlayingIdx == -1) {
+            nowPlayingIdx = queue.size() - 1;
         }
 
-        return playing;
+        return player.startTrack(track, !force);
     }
 
     public boolean stop() {
         if (!queue.isEmpty()) {
-            if (nowPlayingIdx < queue.size()-1 && nowPlayingIdx >= 0) {
+            if (player.getPlayingTrack() != null) {
                 player.stopTrack();
                 nowPlayingIdx = -1;
                 return true;
@@ -109,25 +128,42 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     public boolean skip() {
         if (!queue.isEmpty()) {
             if (nowPlayingIdx < queue.size()-1 && nowPlayingIdx >= 0) {
-                if (play(queue.get(nowPlayingIdx+1), true)) {
+                if (play(queue.get(nowPlayingIdx+1), true, false)) {
                     nowPlayingIdx++;
                     return true;
                 }
+            } else if (nowPlayingIdx >= queue.size()-1) {
+                stop();
+                nowPlayingIdx = -1;
             }
         }
         return false;
     }
 
     @Override
+    public void onTrackStart(AudioPlayer player, AudioTrack track) {
+        EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+        builder.title("Now playing");
+        String memID = (String) track.getUserData();
+        builder.color(Color.MOON_YELLOW);
+        builder.description("[" +
+                ellipsize(track.getInfo().title, 65, false) +
+                "](" + track.getInfo().uri + ") [<@" + memID + ">]");
+        this.playStartMsg = textChat.getActiveTextChannel().createMessage(builder.build()).block();
+    }
+
+    @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+        queue.set(nowPlayingIdx, track.makeClone());
+        if (this.playStartMsg != null) {
+            playStartMsg.delete().share().block();
+        }
         if (endReason.mayStartNext) {
             skip();
         }
     }
 
     public static String makeProgressBar(long pos, long dur) {
-        System.out.println(pos);
-        System.out.println(dur);
         double progress = ((double) pos / dur);
         int progressIndex = (int) (progress * 20);
         StringBuilder sb = new StringBuilder();
