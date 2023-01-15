@@ -1,5 +1,6 @@
 package moe.arvin.kanonbot.commands;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -12,15 +13,10 @@ import moe.arvin.kanonbot.music.VoiceChatHandler;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
+
 @Component
 public class JoinCommand implements Command {
-    private final VoiceChatHandler vcHandler;
-    private final TextChatHandler chatHandler;
-
-    public JoinCommand(GuildAudioManager guildAudioManager) {
-        this.vcHandler = guildAudioManager.getVoiceChatHandler();
-        this.chatHandler = guildAudioManager.getTextChatHandler();
-    }
 
     @Override
     public String getName() {
@@ -29,16 +25,17 @@ public class JoinCommand implements Command {
 
     @Override
     public Mono<Void> handle(Message message, String msgArg) {
-        return joinVC(message);
+        Optional<Snowflake> guildID = message.getGuildId();
+        if (guildID.isEmpty()) {
+            return Mono.empty();
+        }
+        GuildAudioManager gAM = GuildAudioManager.of(guildID.get());
+        final VoiceChatHandler vcHandler = gAM.getVoiceChatHandler();
+        final TextChatHandler chatHandler = gAM.getTextChatHandler();
+        return joinVC(message, vcHandler, chatHandler);
     }
 
-    public Mono<Void> setTextChannel(Message msg) {
-        return msg.getChannel()
-                .doOnSuccess(chatHandler::setActiveTextChannel)
-                .then();
-    }
-
-    public Mono<Void> joinVC(Message msg) {
+    public Mono<Void> joinVC(Message msg, VoiceChatHandler vcHandler, TextChatHandler chatHandler) {
         return msg.getAuthorAsMember()
                 .flatMap(Member::getVoiceState)
                 .flatMap(VoiceState::getChannel)

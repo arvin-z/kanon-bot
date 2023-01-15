@@ -24,15 +24,6 @@ public class BotConfiguration {
     private String token;
 
     @Bean
-    public AudioPlayerManager audioPlayerManager() {
-        final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        playerManager.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
-        AudioSourceManagers.registerRemoteSources(playerManager);
-        AudioSourceManagers.registerLocalSource(playerManager);
-        return playerManager;
-    }
-
-    @Bean
     public <T extends Event> GatewayDiscordClient gatewayDiscordClient(List<EventListener<T>> eventListeners) {
         GatewayDiscordClient client = DiscordClientBuilder.create(token).build()
                 .gateway()

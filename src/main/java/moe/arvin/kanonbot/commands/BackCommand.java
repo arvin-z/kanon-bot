@@ -11,11 +11,11 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 
 @Component
-public class PauseCommand implements Command {
+public class BackCommand implements Command {
 
     @Override
     public String getName() {
-        return "pause";
+        return "back";
     }
 
     @Override
@@ -30,9 +30,9 @@ public class PauseCommand implements Command {
                     "You have to be connected to a voice channel before you can use this command!");
             return Mono.empty();
         }
-        boolean paused = gAM.getScheduler().pause();
-        if (paused) {
-            return message.addReaction(ReactionEmoji.unicode("⏸️"))
+        boolean backed = gAM.getScheduler().back();
+        if (backed) {
+            return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C"))
                     .then();
         } else {
             TextChatHandler.sendErrorEmbedToMsgChannel(message, "You must be playing a track to use this command!");

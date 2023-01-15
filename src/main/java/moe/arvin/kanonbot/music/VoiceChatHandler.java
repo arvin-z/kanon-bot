@@ -58,6 +58,7 @@ public class VoiceChatHandler {
     }
 
     public void leaveVoiceChannel() {
+        gAM.getScheduler().stop();
         if (connection != null && Boolean.TRUE.equals(connection.isConnected().block())) {
             // pause player
             connection.disconnect().block();

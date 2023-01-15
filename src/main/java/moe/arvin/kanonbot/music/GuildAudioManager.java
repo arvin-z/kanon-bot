@@ -20,22 +20,21 @@ public final class GuildAudioManager {
         return MANAGERS.computeIfAbsent(id, ignored -> new GuildAudioManager());
     }
 
-    @Autowired
-    private AudioPlayerManager audioPlayerManager;
-    private AudioPlayer player;
-    private AudioTrackScheduler scheduler;
-    private LavaPlayerAudioProvider provider;
-    private TextChatHandler textChatHandler;
-    private VoiceChatHandler voiceChatHandler;
+    private final AudioPlayer player;
+    private final AudioTrackScheduler scheduler;
+    private final LavaPlayerAudioProvider provider;
+    private final TextChatHandler textChatHandler;
+    private final VoiceChatHandler voiceChatHandler;
 
-    @PostConstruct
-    private void init() {
+    private GuildAudioManager() {
+        AudioPlayerManager audioPlayerManager = SingleAudioPlayerManager.getInstance();
+        player = audioPlayerManager.createPlayer();
         textChatHandler = new TextChatHandler();
         voiceChatHandler = new VoiceChatHandler(this, audioPlayerManager);
-        player = audioPlayerManager.createPlayer();
         scheduler = new AudioTrackScheduler(player, textChatHandler);
         provider = new LavaPlayerAudioProvider(player);
         player.addListener(scheduler);
+
     }
 
     public AudioPlayer getPlayer() {

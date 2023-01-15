@@ -125,6 +125,43 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
+    public void clear() {
+        stop();
+        queue.clear();
+    }
+
+    public boolean jump(int trackNum) {
+        int i = trackNum-1;
+        if (i < queue.size() && i >= 0) {
+            if (play(queue.get(i), true, false)) {
+                nowPlayingIdx = i;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean remove(int trackNum) {
+        int i = trackNum-1;
+        if (i >= queue.size() || i < 0) {
+            return false;
+        }
+        if (i > nowPlayingIdx) {
+            queue.remove(i);
+        } else if (i < nowPlayingIdx) {
+            queue.remove(i);
+            nowPlayingIdx--;
+        } else {
+            queue.remove(i);
+            if (queue.isEmpty()) {
+                stop();
+            } else {
+                play(queue.get(nowPlayingIdx), true, false);
+            }
+        }
+        return true;
+    }
+
     public boolean pause() {
         if (isPlaying()) {
             player.setPaused(true);
@@ -157,6 +194,25 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
+    public boolean back() {
+        if (!queue.isEmpty()) {
+            if (nowPlayingIdx < queue.size() && nowPlayingIdx > 0) {
+                if (play(queue.get(nowPlayingIdx-1), true, false)) {
+                    nowPlayingIdx--;
+                    return true;
+                }
+            } else if (nowPlayingIdx < queue.size() && nowPlayingIdx == 0) {
+                AudioTrack cloneTrack = queue.get(nowPlayingIdx).makeClone();
+                boolean played = play(cloneTrack, true, false);
+                if (played) {
+                    queue.set(nowPlayingIdx, cloneTrack);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
@@ -179,6 +235,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             skip();
         }
     }
+
 
     public static String makeProgressBar(long pos, long dur) {
         double progress = ((double) pos / dur);
