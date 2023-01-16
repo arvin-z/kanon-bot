@@ -33,6 +33,9 @@ public class BotConfiguration {
                 .block();
 
         for (EventListener<T> listener : eventListeners) {
+            if (client == null) {
+                continue;
+            }
             client.on(listener.getEventType())
                     .flatMap(listener::execute)
                     .onErrorResume(listener::handleError)

@@ -29,6 +29,15 @@ public class VCDisconnectListener implements EventListener<VoiceStateUpdateEvent
             }
         }
         // LISTEN FOR other users disconnecting
+        else {
+            return VCDisconnectListener.onUserEvent(event);
+        }
+        return Mono.empty();
+    }
+
+    private static Mono<Void> onUserEvent(VoiceStateUpdateEvent event) {
+        // final Snowflake guildID = event.getCurrent().getGuildId();
+        // return Mono.defer(() -> Mono.justOrEmpty());
         return Mono.empty();
     }
 }

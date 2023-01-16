@@ -22,6 +22,9 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     private int nowPlayingIdx;
     private final AudioPlayer player;
 
+    // 0 = disabled, 1 = looping track, 2 = looping queue
+    private int loopState;
+
     private TextChatHandler textChat;
     Message playStartMsg;
 
@@ -86,6 +89,17 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
+    public int toggleLoop() {
+        if (loopState == 0) {
+            this.loopState = 1;
+        } else if (loopState == 1) {
+            this.loopState = 2;
+        } else if (loopState == 2) {
+            loopState = 0;
+        }
+        return loopState;
+    }
+
     public boolean playFromStart() {
         if (queue.size() > 0) {
             if (play(queue.get(0), true, false)) {
@@ -133,6 +147,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     public boolean jump(int trackNum) {
         int i = trackNum-1;
         if (i < queue.size() && i >= 0) {
+            queue.set(nowPlayingIdx, queue.get(nowPlayingIdx).makeClone());
             if (play(queue.get(i), true, false)) {
                 nowPlayingIdx = i;
                 return true;
@@ -156,6 +171,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             if (queue.isEmpty()) {
                 stop();
             } else {
+                nowPlayingIdx--;
                 play(queue.get(nowPlayingIdx), true, false);
             }
         }
@@ -178,6 +194,18 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
+    public boolean seek(int sec) {
+        if (isPlaying()) {
+            long s = (long) Math.abs(sec);
+            long ms = s * 1000;
+            long dur = queue.get(nowPlayingIdx).getDuration();
+            long safeSeek = Math.min(Math.max(ms, 0), dur-1);
+            player.getPlayingTrack().setPosition(safeSeek);
+            return true;
+        }
+        return false;
+    }
+
     public boolean skip() {
         if (!queue.isEmpty()) {
             if (nowPlayingIdx < queue.size()-1 && nowPlayingIdx >= 0) {
@@ -186,10 +214,22 @@ public class AudioTrackScheduler extends AudioEventAdapter {
                     return true;
                 }
             } else if (nowPlayingIdx >= queue.size()-1) {
-                stop();
-                nowPlayingIdx = -1;
+                if (loopState == 2) {
+                    nowPlayingIdx = 0;
+                    playFromStart();
+                } else {
+                    stop();
+                    nowPlayingIdx = -1;
+                }
                 return true;
             }
+        }
+        return false;
+    }
+
+    public boolean repeatPrev() {
+        if (!queue.isEmpty()) {
+            return play(queue.get(nowPlayingIdx), true, false);
         }
         return false;
     }
@@ -222,7 +262,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         builder.description("[" +
                 ellipsize(track.getInfo().title, 65, false) +
                 "](" + track.getInfo().uri + ") [<@" + memID + ">]");
-        this.playStartMsg = textChat.getActiveTextChannel().createMessage(builder.build()).block();
+        this.playStartMsg = textChat.getActiveTextChannel().createMessage(builder.build()).share().block();
     }
 
     @Override
@@ -232,7 +272,11 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             playStartMsg.delete().share().block();
         }
         if (endReason.mayStartNext) {
-            skip();
+            if (loopState == 1) {
+                repeatPrev();
+            } else {
+                skip();
+            }
         }
     }
 
