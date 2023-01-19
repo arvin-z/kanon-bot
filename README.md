@@ -5,7 +5,28 @@ A Discord bot for playing music, built with Spring Boot
 using Discord4J and Lavaplayer.
 
 
-## Features
+## How to setup
 
-Still under development.
+
+TODO
+
+
+
+## Commands
+
+
+- play <song>
+- np (now playing)
+- queue
+- clear
+- remove
+- skip
+- jump
+- back
+- loop
+- pause
+- unpause
+- seek
+- join
+- dc (disconnect)
 
