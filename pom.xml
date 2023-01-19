@@ -10,7 +10,7 @@
     </parent>
     <groupId>moe.arvin</groupId>
     <artifactId>KanonBot</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>KanonBot</name>
     <description>KanonBot</description>
     <properties>
@@ -69,11 +69,17 @@
 
     </dependencies>
 
+    <packaging>jar</packaging>
+
     <build>
+        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <executable>true</executable>
+                </configuration>
             </plugin>
         </plugins>
     </build>
