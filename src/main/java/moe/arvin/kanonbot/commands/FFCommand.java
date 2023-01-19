@@ -19,6 +19,11 @@ public class FFCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Go forward by the specified number of seconds";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

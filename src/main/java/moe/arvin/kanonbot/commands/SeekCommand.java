@@ -19,6 +19,11 @@ public class SeekCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Go to the specified timestamp";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

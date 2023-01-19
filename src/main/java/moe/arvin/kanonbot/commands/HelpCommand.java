@@ -28,6 +28,11 @@ public class HelpCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Show this menu";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.color(Color.MOON_YELLOW);

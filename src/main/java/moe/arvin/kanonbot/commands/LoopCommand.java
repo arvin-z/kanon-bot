@@ -21,6 +21,11 @@ public class LoopCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Toggle between looping the track or the queue.";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

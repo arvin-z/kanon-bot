@@ -17,6 +17,11 @@ public class QueueCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "List the currently queued tracks";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

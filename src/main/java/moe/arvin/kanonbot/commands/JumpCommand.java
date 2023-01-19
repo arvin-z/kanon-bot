@@ -19,6 +19,11 @@ public class JumpCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Jump to the specified track number";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

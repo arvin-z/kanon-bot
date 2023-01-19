@@ -24,6 +24,11 @@ public class JoinCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Join the voice channel";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

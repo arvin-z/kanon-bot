@@ -19,6 +19,11 @@ public class BackCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Go to the previous song in the queue";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

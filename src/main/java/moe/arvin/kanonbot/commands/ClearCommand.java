@@ -19,6 +19,11 @@ public class ClearCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Clear the queue";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {

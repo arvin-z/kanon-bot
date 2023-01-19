@@ -20,6 +20,11 @@ public class SkipCommand implements Command {
     }
 
     @Override
+    public String getDescription() {
+        return "Skip the currently playing track";
+    }
+
+    @Override
     public Mono<Void> handle(Message message, String msgArg) {
         Optional<Snowflake> guildID = message.getGuildId();
         if (guildID.isEmpty()) {
