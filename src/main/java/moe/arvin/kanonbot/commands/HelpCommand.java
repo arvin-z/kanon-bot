@@ -37,7 +37,7 @@ public class HelpCommand implements Command {
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.color(Color.MOON_YELLOW);
         for (Command cmd : commands) {
-            builder.addField(cmd.getName(), cmd.getName(), false);
+            builder.addField(cmd.getName(), cmd.getDescription(), false);
         }
         return message.getChannel()
                 .flatMap(channel -> channel.createMessage(builder.build()))
