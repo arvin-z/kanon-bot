@@ -39,6 +39,16 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return queue;
     }
 
+    public void shuffleQueue() {
+        if (!isPlaying()) {
+            Collections.shuffle(queue);
+        } else {
+            AudioTrack curr = queue.get(nowPlayingIdx);
+            Collections.shuffle(queue);
+            nowPlayingIdx = queue.indexOf(curr);
+        }
+    }
+
     public String queueToString() {
         if (queue.isEmpty()) {
             return "```nim\nThe queue is empty ;-;\n```";
@@ -216,6 +226,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             player.getPlayingTrack().setPosition(safePos);
             return true;
         }
+        return false;
     }
 
     public boolean skip() {
