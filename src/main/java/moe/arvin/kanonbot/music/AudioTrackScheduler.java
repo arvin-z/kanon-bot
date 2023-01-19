@@ -198,12 +198,24 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         if (isPlaying()) {
             long s = (long) Math.abs(sec);
             long ms = s * 1000;
-            long dur = queue.get(nowPlayingIdx).getDuration();
+            long dur = player.getPlayingTrack().getDuration();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
             player.getPlayingTrack().setPosition(safeSeek);
             return true;
         }
         return false;
+    }
+
+    public boolean forwardOrRewind(int sec) {
+        if (isPlaying()) {
+            int ms = sec * 1000;
+            long dur = player.getPlayingTrack().getDuration();
+            long currPos = player.getPlayingTrack().getPosition();
+            long newPos = currPos + ms;
+            long safePos = Math.min(Math.max(newPos, 0), dur-1);
+            player.getPlayingTrack().setPosition(safePos);
+            return true;
+        }
     }
 
     public boolean skip() {
