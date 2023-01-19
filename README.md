@@ -19,6 +19,7 @@ TODO
 - np (now playing)
 - queue
 - clear
+- shuffle
 - remove
 - skip
 - jump
@@ -27,6 +28,8 @@ TODO
 - pause
 - unpause
 - seek
+- ff (fast-forward)
+- rewind
 - join
 - dc (disconnect)
 
