@@ -157,7 +157,9 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     public boolean jump(int trackNum) {
         int i = trackNum-1;
         if (i < queue.size() && i >= 0) {
-            queue.set(nowPlayingIdx, queue.get(nowPlayingIdx).makeClone());
+            if (nowPlayingIdx >= 0) {
+                queue.set(nowPlayingIdx, queue.get(nowPlayingIdx).makeClone());
+            }
             if (play(queue.get(i), true, false)) {
                 nowPlayingIdx = i;
                 return true;
