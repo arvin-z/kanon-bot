@@ -37,7 +37,7 @@ public class UnpauseCommand implements Command {
         }
         boolean unpaused = gAM.getScheduler().unpause();
         if (unpaused) {
-            return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C️"))
+            return message.addReaction(ReactionEmoji.unicode("⏸️"))
                     .then();
         } else {
             TextChatHandler.sendErrorEmbedToMsgChannel(message, "You must be playing a track to use this command!");
