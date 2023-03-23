@@ -104,6 +104,8 @@ public class VoiceChatHandler {
                     gAM.getScheduler().playFromStart();
                 }
                 return true;
+            } else {
+                return true;
             }
         }
         String[] URLPrefixes = {"http", "https"};
