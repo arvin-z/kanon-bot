@@ -52,14 +52,14 @@
             <version>3.2.5</version>
         </dependency>
         <dependency>
-            <groupId>com.github.walkyst</groupId>
-            <artifactId>lavaplayer-fork</artifactId>
-            <version>1.4.2</version>
+            <groupId>dev.arbjerg</groupId>
+            <artifactId>lavaplayer</artifactId>
+            <version>1.5.0</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.8</version>
+            <version>1.4.5</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
