@@ -9,6 +9,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -21,6 +22,9 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     private final List<AudioTrack> queue;
     private int nowPlayingIdx;
     private final AudioPlayer player;
+
+    @Value("${kanonbot.prefix}")
+    private char cmdPrefix;
 
     // 0 = disabled, 1 = looping track, 2 = looping queue
     private int loopState;
@@ -49,30 +53,53 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         }
     }
 
-    public String queueToString() {
+    public String queueToString(int pageNum) {
         if (queue.isEmpty()) {
             return "```nim\nThe queue is empty ;-;\n```";
         } else {
-            StringBuilder sb = new StringBuilder("```nim\n");
-            for (int i = 0; i < queue.size(); i++) {
-                if (i == nowPlayingIdx) {
-                    sb.append("    ⬐ current track                        \n");
-                }
-                sb.append(i + 1).append(") ");
-                sb.append(ellipsize(queue.get(i).getInfo().title, 37, true));
-                sb.append(" ");
-                if (i == nowPlayingIdx) {
-                    sb.append(convertMsToHms(queue.get(i).getDuration()-queue.get(i).getPosition())).append(" left\n");
-                } else {
-                    sb.append(convertMsToHms(queue.get(i).getDuration())).append("\n");
-                }
-                if (i == nowPlayingIdx) {
-                    sb.append("    ⬑ current track                        \n");
-                }
+            int totalEntries = queue.size();
+            int entriesPerPage = 15;
+            int pageRemainder = totalEntries % entriesPerPage;
+            int pageCount = pageRemainder == 0 ? totalEntries / entriesPerPage : totalEntries /entriesPerPage + 1;
+            if (pageNum < 1) {
+                pageNum = 1;
+            } else if (pageNum > pageCount) {
+                pageNum = pageCount;
             }
-            sb.append("\n   This is the end of the queue!\n```");
+            int lastPageEntries = pageRemainder == 0 ? entriesPerPage : pageRemainder;
+            StringBuilder sb = new StringBuilder("```nim\n");
+            if (pageNum == pageCount) {
+                sb.append(queueStringBuilder(pageNum, lastPageEntries));
+                sb.append("\n   This is the end of the queue!\n");
+            }
+            else {
+                sb.append(queueStringBuilder(pageNum, entriesPerPage));
+                sb.append("\nUse %cqueue %d to see the next page!\n", cmdPrefix, pageNum + 1);
+            }
+            sb.append("```");
             return sb.toString();
         }
+    }
+
+    public String queueStringBuilder(int page, int size) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = size * (page - 1); i < size * page; i++) {
+            if (i == nowPlayingIdx) {
+                sb.append("    ⬐ current track                        \n");
+            }
+            sb.append(i + 1).append(") ");
+            sb.append(ellipsize(queue.get(i).getInfo().title, 37, true));
+            sb.append(" ");
+            if (i == nowPlayingIdx) {
+                sb.append(convertMsToHms(queue.get(i).getDuration()-queue.get(i).getPosition())).append(" left\n");
+            } else {
+                sb.append(convertMsToHms(queue.get(i).getDuration())).append("\n");
+            }
+            if (i == nowPlayingIdx) {
+                sb.append("    ⬑ current track                        \n");
+            }
+        }
+        return sb.toString();
     }
 
     public EmbedCreateSpec nowPlayingToEmbed() {

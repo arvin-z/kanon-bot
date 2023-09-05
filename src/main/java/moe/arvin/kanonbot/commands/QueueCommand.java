@@ -3,6 +3,7 @@ package moe.arvin.kanonbot.commands;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import moe.arvin.kanonbot.music.GuildAudioManager;
+import moe.arvin.kanonbot.music.TextChatHandler;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -28,8 +29,18 @@ public class QueueCommand implements Command {
             return Mono.empty();
         }
         GuildAudioManager gAM = GuildAudioManager.of(guildID.get());
+
+        int pageArg;
+        try {
+            pageArg = Integer.parseInt(msgArg);
+        } catch (NumberFormatException e) {
+            pageArg = 1;
+        }
+        
+        final int page = pageArg;
+
         return message.getChannel()
-                .flatMap(channel -> channel.createMessage(gAM.getScheduler().queueToString()))
+                .flatMap(channel -> channel.createMessage(gAM.getScheduler().queueToString(page)))
                 .then();
     }
 }
