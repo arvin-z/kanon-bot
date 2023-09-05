@@ -74,7 +74,11 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             }
             else {
                 sb.append(queueStringBuilder(pageNum, entriesPerPage));
-                sb.append("\nUse %cqueue %d to see the next page!\n", cmdPrefix, pageNum + 1);
+                sb.append("\nUse ")
+                        .append(cmdPrefix)
+                        .append("queue ")
+                        .append(pageNum + 1)
+                        .append(" to see the next page!\n");
             }
             sb.append("```");
             return sb.toString();

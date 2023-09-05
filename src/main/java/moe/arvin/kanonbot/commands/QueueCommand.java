@@ -36,7 +36,7 @@ public class QueueCommand implements Command {
         } catch (NumberFormatException e) {
             pageArg = 1;
         }
-        
+
         final int page = pageArg;
 
         return message.getChannel()
