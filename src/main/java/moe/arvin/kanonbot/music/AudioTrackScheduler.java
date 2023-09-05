@@ -63,14 +63,12 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             } else if (pageNum > pageCount) {
                 pageNum = pageCount;
             }
-            int lastPageEntries = pageRemainder == 0 ? entriesPerPage : pageRemainder;
             StringBuilder sb = new StringBuilder("```nim\n");
+            sb.append(queueStringBuilder(pageNum, entriesPerPage));
             if (pageNum == pageCount) {
-                sb.append(queueStringBuilder(pageNum, lastPageEntries));
                 sb.append("\n   This is the end of the queue!\n");
             }
             else {
-                sb.append(queueStringBuilder(pageNum, entriesPerPage));
                 sb.append("\nUse ")
                         .append(cmdPrefix)
                         .append("queue ")
@@ -84,7 +82,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public String queueStringBuilder(int page, int size) {
         StringBuilder sb = new StringBuilder();
-        for (int i = size * (page - 1); i < size * page; i++) {
+        for (int i = size * (page - 1); i < size * page && i < queue.size(); i++) {
             if (i == nowPlayingIdx) {
                 sb.append("    ⬐ current track                        \n");
             }
