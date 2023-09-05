@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.TextChatHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -11,6 +12,9 @@ import java.util.Optional;
 
 @Component
 public class QueueCommand implements Command {
+
+    @Value("${kanonbot.prefix}")
+    private char cmdPrefix;
 
     @Override
     public String getName() {
@@ -40,7 +44,7 @@ public class QueueCommand implements Command {
         final int page = pageArg;
 
         return message.getChannel()
-                .flatMap(channel -> channel.createMessage(gAM.getScheduler().queueToString(page)))
+                .flatMap(channel -> channel.createMessage(gAM.getScheduler().queueToString(page, cmdPrefix)))
                 .then();
     }
 }

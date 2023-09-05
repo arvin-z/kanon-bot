@@ -23,9 +23,6 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     private int nowPlayingIdx;
     private final AudioPlayer player;
 
-    @Value("${kanonbot.prefix}")
-    private char cmdPrefix;
-
     // 0 = disabled, 1 = looping track, 2 = looping queue
     private int loopState;
 
@@ -53,7 +50,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         }
     }
 
-    public String queueToString(int pageNum) {
+    public String queueToString(int pageNum, char cmdPrefix) {
         if (queue.isEmpty()) {
             return "```nim\nThe queue is empty ;-;\n```";
         } else {
