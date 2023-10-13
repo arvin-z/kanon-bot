@@ -1,5 +1,6 @@
 package moe.arvin.kanonbot.music;
 
+import com.github.natanbc.lavadsp.timescale.TimescalePcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -300,6 +301,19 @@ public class AudioTrackScheduler extends AudioEventAdapter {
                     return true;
                 }
             }
+        }
+        return false;
+    }
+
+    public boolean changeSpeed(double multiplier) {
+        if (isPlaying()) {
+            player.setFilterFactory((track, format, output) -> {
+                TimescalePcmAudioFilter audioFilter = new TimescalePcmAudioFilter(output, format.channelCount, format.sampleRate);
+                audioFilter.setSpeed(multiplier);
+                return Collections.singletonList(audioFilter);
+            });
+            player.setFrameBufferDuration(300);
+            return true;
         }
         return false;
     }
