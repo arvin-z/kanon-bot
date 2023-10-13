@@ -12,6 +12,7 @@ public final class SingleAudioPlayerManager {
     static  {
         PLAYER_MANAGER = new DefaultAudioPlayerManager();
         PLAYER_MANAGER.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
+        PLAYER_MANAGER.getConfiguration().setFilterHotSwapEnabled(true);
         AudioSourceManagers.registerRemoteSources(PLAYER_MANAGER);
         AudioSourceManagers.registerLocalSource(PLAYER_MANAGER);
     }
