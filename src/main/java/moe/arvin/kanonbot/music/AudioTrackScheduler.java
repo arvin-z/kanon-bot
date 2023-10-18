@@ -30,11 +30,15 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     private TextChatHandler textChat;
     Message playStartMsg;
 
-    public AudioTrackScheduler(final AudioPlayer player, TextChatHandler txtChat) {
+    private FilterChainConfiguration filterChainConfiguration;
+
+    public AudioTrackScheduler(final AudioPlayer player, TextChatHandler txtChat, FilterChainConfiguration fcc) {
         nowPlayingIdx = -1;
         queue = Collections.synchronizedList(new ArrayList<>());
         this.player = player;
         this.textChat = txtChat;
+        this.filterChainConfiguration = fcc;
+        this.player.setFrameBufferDuration(300);
     }
 
     public List<AudioTrack> getQueue() {
@@ -307,12 +311,17 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public boolean changeSpeed(double multiplier) {
         if (isPlaying()) {
-            player.setFilterFactory((track, format, output) -> {
-                TimescalePcmAudioFilter audioFilter = new TimescalePcmAudioFilter(output, format.channelCount, format.sampleRate);
-                audioFilter.setSpeed(multiplier);
-                return Collections.singletonList(audioFilter);
-            });
-            player.setFrameBufferDuration(300);
+            filterChainConfiguration.timescale().setSpeed(multiplier);
+            this.player.setFilterFactory(filterChainConfiguration.factory());
+            return true;
+        }
+        return false;
+    }
+
+    public boolean changePitch(double val) {
+        if (isPlaying()) {
+            filterChainConfiguration.timescale().setPitch(val);
+            this.player.setFilterFactory(filterChainConfiguration.factory());
             return true;
         }
         return false;

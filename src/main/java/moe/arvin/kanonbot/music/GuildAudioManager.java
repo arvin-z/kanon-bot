@@ -26,12 +26,15 @@ public final class GuildAudioManager {
     private final TextChatHandler textChatHandler;
     private final VoiceChatHandler voiceChatHandler;
 
+    private final FilterChainConfiguration filterChainConfiguration;
+
     private GuildAudioManager() {
         AudioPlayerManager audioPlayerManager = SingleAudioPlayerManager.getInstance();
         player = audioPlayerManager.createPlayer();
         textChatHandler = new TextChatHandler();
         voiceChatHandler = new VoiceChatHandler(this, audioPlayerManager);
-        scheduler = new AudioTrackScheduler(player, textChatHandler);
+        filterChainConfiguration = new FilterChainConfiguration();
+        scheduler = new AudioTrackScheduler(player, textChatHandler, filterChainConfiguration);
         provider = new LavaPlayerAudioProvider(player);
         player.addListener(scheduler);
 
@@ -55,5 +58,9 @@ public final class GuildAudioManager {
 
     public VoiceChatHandler getVoiceChatHandler() {
         return voiceChatHandler;
+    }
+
+    public FilterChainConfiguration getFilterChainConfiguration() {
+        return filterChainConfiguration;
     }
 }
