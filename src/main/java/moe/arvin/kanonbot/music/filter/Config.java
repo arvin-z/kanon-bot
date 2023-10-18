@@ -6,7 +6,7 @@ import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 
 public interface Config {
 
-    double MINIMUM_FP_DIFF = 0.1;
+    double MINIMUM_FP_DIFF = 0.01;
 
     String name();
 

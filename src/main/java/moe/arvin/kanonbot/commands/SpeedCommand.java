@@ -37,13 +37,13 @@ public class SpeedCommand implements Command {
         }
         double multiplier;
         try {
-            multiplier = (double) Math.round(Double.parseDouble(msgArg) * 10) / 10;
-            if (multiplier < 0.1 || multiplier > 2.0) {
+            multiplier = (double) Math.round(Double.parseDouble(msgArg) * 100) / 100;
+            if (multiplier < 0.01 || multiplier > 2.00) {
                 throw new Exception("invalid speed multiplier");
             }
         } catch (Exception e) {
             TextChatHandler.sendErrorEmbedToMsgChannel(message,
-                    "You must give a valid multiplier between 0.1 and 2.0!");
+                    "You must give a valid multiplier between 0.01 and 2.00!");
             return Mono.empty();
         }
         boolean speedChanged = gAM.getScheduler().changeSpeed(multiplier);
