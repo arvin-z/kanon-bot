@@ -35,4 +35,6 @@ using Discord4J and Lavaplayer.
 - join
 - dc (disconnect)
 - help
+- speed
+- pitch
 
