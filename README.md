@@ -27,6 +27,7 @@ using Discord4J and Lavaplayer.
 - jump
 - back
 - loop
+- localloop
 - pause
 - unpause
 - seek
