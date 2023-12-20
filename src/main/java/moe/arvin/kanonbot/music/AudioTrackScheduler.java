@@ -14,9 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class AudioTrackScheduler extends AudioEventAdapter {
 
@@ -26,6 +24,9 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     // 0 = disabled, 1 = looping track, 2 = looping queue
     private int loopState;
+
+    private Timer localLoopTimer;
+    private boolean localLoopActive;
 
     private TextChatHandler textChat;
     Message playStartMsg;
@@ -131,6 +132,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     }
 
     public int toggleLoop() {
+
         if (loopState == 0) {
             this.loopState = 1;
         } else if (loopState == 1) {
@@ -233,6 +235,34 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         if (isPlaying()) {
             player.setPaused(false);
             return true;
+        }
+        return false;
+    }
+
+    public boolean localLoop(int s, int e) {
+        if (isPlaying()) {
+            int dur = e - s;
+            localLoopTimer = new Timer();
+            localLoopTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    seek(s);
+                }
+            }, 0, dur * 1000L);
+            localLoopActive = true;
+        }
+        return false;
+    }
+
+    public boolean localLoop() {
+        if (isPlaying()) {
+            if (localLoopActive) {
+                if (localLoopTimer != null) {
+                    localLoopTimer.cancel();
+                }
+                localLoopActive = false;
+                return true;
+            }
         }
         return false;
     }
@@ -341,6 +371,12 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+        if (localLoopActive) {
+            if (localLoopTimer != null) {
+                localLoopTimer.cancel();
+            }
+            localLoopActive = false;
+        }
         queue.set(nowPlayingIdx, track.makeClone());
         if (this.playStartMsg != null) {
             playStartMsg.delete().share().block();
