@@ -250,6 +250,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
                 }
             }, 0, dur * 1000L);
             localLoopActive = true;
+            return true;
         }
         return false;
     }
