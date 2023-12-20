@@ -1,0 +1,70 @@
+package moe.arvin.kanonbot.commands;
+
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.reaction.ReactionEmoji;
+import moe.arvin.kanonbot.music.GuildAudioManager;
+import moe.arvin.kanonbot.music.TextChatHandler;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+import java.util.Optional;
+
+@Component
+public class LocalLoopCommand implements Command {
+    @Override
+    public String getName() {
+        return "localloop";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Loop between the 2 specified points of a track";
+    }
+
+    @Override
+    public Mono<Void> handle(Message message, String msgArg) {
+        Optional<Snowflake> guildID = message.getGuildId();
+        if (guildID.isEmpty()) {
+            return Mono.empty();
+        }
+        GuildAudioManager gAM = GuildAudioManager.of(guildID.get());
+        if (!gAM.getVoiceChatHandler().userInVoiceChannelFromMsg(message)) {
+            TextChatHandler.sendErrorEmbedToMsgChannel(message,
+                    "You have to be connected to a voice channel before you can use this command!");
+            return Mono.empty();
+        }
+        if (msgArg == null || msgArg.isEmpty()) {
+            boolean res = gAM.getScheduler().localLoop();
+            if (res) {
+                TextChatHandler.sendErrorEmbedToMsgChannel(message,"Local Loop cancelled!" );
+                return Mono.empty();
+            } else {
+                TextChatHandler.sendErrorEmbedToMsgChannel(message,"There is no Local Loop active!" );
+                return Mono.empty();
+            }
+        }
+        else {
+            int beginT;
+            int endT;
+            try {
+                String[] times = msgArg.split(" ");
+                beginT = Integer.parseInt(times[0]);
+                endT = Integer.parseInt(times[1]);
+            } catch (NumberFormatException e) {
+                TextChatHandler.sendErrorEmbedToMsgChannel(message,
+                        "You must give 2 valid times in seconds!");
+                return Mono.empty();
+            }
+            boolean res = gAM.getScheduler().localLoop(beginT, endT);
+            if (res) {
+                return message.addReaction(ReactionEmoji.unicode("\uD83D\uDD04"))
+                        .then();
+            } else{
+                TextChatHandler.sendErrorEmbedToMsgChannel(message, "You must be playing a track to use this command!");
+                return Mono.empty();
+            }
+        }
+
+    }
+}
