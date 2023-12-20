@@ -40,6 +40,8 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         this.textChat = txtChat;
         this.filterChainConfiguration = fcc;
         this.player.setFrameBufferDuration(300);
+        this.localLoopActive = false;
+        this.localLoopTimer = new Timer();
     }
 
     public List<AudioTrack> getQueue() {
@@ -242,7 +244,10 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     public boolean localLoop(int s, int e) {
         if (isPlaying()) {
             int dur = e - s;
-            localLoopTimer = new Timer();
+            if (localLoopActive) {
+                localLoopTimer.cancel();
+                localLoopTimer = new Timer();
+            }
             localLoopTimer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
@@ -258,9 +263,8 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     public boolean localLoop() {
         if (isPlaying()) {
             if (localLoopActive) {
-                if (localLoopTimer != null) {
-                    localLoopTimer.cancel();
-                }
+                localLoopTimer.cancel();
+                localLoopTimer = new Timer();
                 localLoopActive = false;
                 return true;
             }
@@ -373,9 +377,8 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         if (localLoopActive) {
-            if (localLoopTimer != null) {
-                localLoopTimer.cancel();
-            }
+            localLoopTimer.cancel();
+            localLoopTimer = new Timer();
             localLoopActive = false;
         }
         queue.set(nowPlayingIdx, track.makeClone());
