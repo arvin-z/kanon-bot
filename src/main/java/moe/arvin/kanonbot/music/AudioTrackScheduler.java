@@ -33,6 +33,8 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     private FilterChainConfiguration filterChainConfiguration;
 
+    private long positionBasis;
+
     public AudioTrackScheduler(final AudioPlayer player, TextChatHandler txtChat, FilterChainConfiguration fcc) {
         nowPlayingIdx = -1;
         queue = Collections.synchronizedList(new ArrayList<>());
@@ -42,6 +44,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         this.player.setFrameBufferDuration(300);
         this.localLoopActive = false;
         this.localLoopTimer = new Timer();
+        this.positionBasis = 0;
     }
 
     public List<AudioTrack> getQueue() {
@@ -109,6 +112,13 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return sb.toString();
     }
 
+    public long getRelativePosition() {
+        AudioTrack currTrack = player.getPlayingTrack();
+        long pos = currTrack.getPosition() - positionBasis;
+        double speed = filterChainConfiguration.timescale().speed();
+        return (long)(pos * speed + positionBasis);
+    }
+
     public EmbedCreateSpec nowPlayingToEmbed() {
         AudioTrack currTrack = player.getPlayingTrack();
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
@@ -121,7 +131,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             builder.description("[" +
                     ellipsize(currTrack.getInfo().title, 65, false) +
                     "](" + currTrack.getInfo().uri + ") [<@" + memID + ">]");
-            builder.footer(makeProgressBar(currTrack.getPosition(), currTrack.getDuration()), null);
+            builder.footer(makeProgressBar(getRelativePosition(), currTrack.getDuration()), null);
         }
         return builder.build();
     }
@@ -278,6 +288,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             long ms = s * 1000;
             long dur = player.getPlayingTrack().getDuration();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
+            positionBasis = safeSeek;
             player.getPlayingTrack().setPosition(safeSeek);
             return true;
         }
@@ -288,9 +299,10 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         if (isPlaying()) {
             int ms = sec * 1000;
             long dur = player.getPlayingTrack().getDuration();
-            long currPos = player.getPlayingTrack().getPosition();
+            long currPos = getRelativePosition();
             long newPos = currPos + ms;
             long safePos = Math.min(Math.max(newPos, 0), dur-1);
+            positionBasis = safePos;
             player.getPlayingTrack().setPosition(safePos);
             return true;
         }
@@ -346,6 +358,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public boolean changeSpeed(double multiplier) {
         if (isPlaying()) {
+            positionBasis = getRelativePosition();
             filterChainConfiguration.timescale().setSpeed(multiplier);
             this.player.setFilterFactory(filterChainConfiguration.factory());
             return true;
@@ -364,6 +377,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
+        positionBasis = 0;
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.title("Now playing");
         String memID = (String) track.getUserData();
