@@ -157,6 +157,9 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public boolean playFromStart() {
         if (queue.size() > 0) {
+            if (nowPlayingIdx >= 0) {
+                queue.set(nowPlayingIdx, queue.get(nowPlayingIdx).makeClone());
+            }
             if (play(queue.get(0), true, false)) {
                 nowPlayingIdx = 0;
                 return true;
@@ -377,6 +380,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
+        System.out.println(nowPlayingIdx);
         positionBasis = 0;
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.title("Now playing");
