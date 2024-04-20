@@ -69,12 +69,21 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             int entriesPerPage = 15;
             int pageRemainder = totalEntries % entriesPerPage;
             int pageCount = pageRemainder == 0 ? totalEntries / entriesPerPage : totalEntries /entriesPerPage + 1;
-            if (pageNum < 1) {
+            if (pageNum < 1 && nowPlayingIdx >= 0) {
+                pageNum = getCurrentPageNum(entriesPerPage);
+            } else if (pageNum < 1) {
                 pageNum = 1;
             } else if (pageNum > pageCount) {
                 pageNum = pageCount;
             }
             StringBuilder sb = new StringBuilder("```nim\n");
+            if (pageNum != 1) {
+                sb.append("Use ")
+                        .append(cmdPrefix)
+                        .append("queue ")
+                        .append(pageNum - 1)
+                        .append(" to see the previous page!\n\n");
+            }
             sb.append(queueStringBuilder(pageNum, entriesPerPage));
             if (pageNum == pageCount) {
                 sb.append("\n   This is the end of the queue!\n");
@@ -89,6 +98,10 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             sb.append("```");
             return sb.toString();
         }
+    }
+
+    public int getCurrentPageNum(int size) {
+        return (nowPlayingIdx / size) + 1;
     }
 
     public String queueStringBuilder(int page, int size) {
@@ -211,6 +224,21 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             if (play(queue.get(i), true, false)) {
                 nowPlayingIdx = i;
                 return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean jumpTitle(String searchArg) {
+        if (queue.isEmpty() || searchArg == null) {
+            return false;
+        }
+
+        String searchArgLower = searchArg.toLowerCase();
+
+        for (int i = 0; i < queue.size(); i++) {
+            if (queue.get(i).getInfo().title.toLowerCase().contains(searchArgLower)) {
+                return jump(i+1);
             }
         }
         return false;

@@ -38,7 +38,7 @@ public class QueueCommand implements Command {
         try {
             pageArg = Integer.parseInt(msgArg);
         } catch (NumberFormatException e) {
-            pageArg = 1;
+            pageArg = -1;
         }
 
         final int page = pageArg;

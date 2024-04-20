@@ -39,9 +39,14 @@ public class JumpCommand implements Command {
         try {
             trackNum = Integer.parseInt(msgArg);
         } catch (NumberFormatException e) {
-            TextChatHandler.sendErrorEmbedToMsgChannel(message,
-                    "You must enter a valid track number!");
-            return Mono.empty();
+            boolean jumpedTitle = gAM.getScheduler().jumpTitle(msgArg);
+            if (jumpedTitle) {
+                return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C"))
+                        .then();
+            } else {
+                TextChatHandler.sendErrorEmbedToMsgChannel(message, "No matching track found in queue!");
+                return Mono.empty();
+            }
         }
         boolean jumped = gAM.getScheduler().jump(trackNum);
         if (jumped) {
