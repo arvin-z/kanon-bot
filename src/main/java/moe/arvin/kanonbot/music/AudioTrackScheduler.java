@@ -408,7 +408,6 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
-        System.out.println(nowPlayingIdx);
         positionBasis = 0;
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.title("Now playing");
