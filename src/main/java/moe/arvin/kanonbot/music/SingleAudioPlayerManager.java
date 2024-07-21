@@ -25,7 +25,7 @@ import java.util.List;
 public final class SingleAudioPlayerManager {
 
     private static final AudioPlayerManager PLAYER_MANAGER;
-    private static YoutubeAudioSourceManager youtube;
+    private static final YoutubeAudioSourceManager youtube;
     private static final Logger logger = LoggerFactory.getLogger(SingleAudioPlayerManager.class);
 
     static  {
