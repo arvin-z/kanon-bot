@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import discord4j.common.util.Snowflake;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public final class GuildAudioManager {
+
+    @Value("${kanonbot.ipv6block}")
+    private String ipv6Block;
 
     private static final Map<Snowflake, GuildAudioManager> MANAGERS = new ConcurrentHashMap<>();
 
@@ -38,6 +42,11 @@ public final class GuildAudioManager {
         provider = new LavaPlayerAudioProvider(player);
         player.addListener(scheduler);
 
+    }
+
+    @PostConstruct
+    private void initialize() {
+        SingleAudioPlayerManager.initYoutubeRotation(ipv6Block);
     }
 
     public AudioPlayer getPlayer() {
