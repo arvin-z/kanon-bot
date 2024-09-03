@@ -42,6 +42,15 @@ public final class SingleAudioPlayerManager {
 
     }
 
+    public static void initOAuth(String oauthToken) {
+        if (oauthToken != null && !oauthToken.isEmpty()) {
+            logger.info("Enabling oAuth with existing token.");
+            youtube.useOauth2(oauthToken, true);
+        } else {
+            youtube.useOauth2(null, false);
+        }
+    }
+
     public static void initYoutubeRotation(String ipv6Block) {
         if (ipv6Block != null && !ipv6Block.isEmpty()) {
             logger.info("Enabling IPv6 rotation for YouTube");

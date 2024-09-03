@@ -16,6 +16,12 @@ public final class GuildAudioManager {
     @Value("${kanonbot.ipv6block}")
     private String ipv6Block;
 
+    @Value("${kanonbot.useoauth}")
+    private String useOAuth;
+
+    @Value("${kanonbot.oauthtoken}")
+    private String oAuthToken;
+
     private static final Map<Snowflake, GuildAudioManager> MANAGERS = new ConcurrentHashMap<>();
 
     public static GuildAudioManager of(final Snowflake id) {
@@ -45,6 +51,9 @@ public final class GuildAudioManager {
     @PostConstruct
     private void initialize() {
         SingleAudioPlayerManager.initYoutubeRotation(ipv6Block);
+        if (useOAuth.equals("true")) {
+            SingleAudioPlayerManager.initOAuth(oAuthToken);
+        }
     }
 
     public AudioPlayer getPlayer() {
