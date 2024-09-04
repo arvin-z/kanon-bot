@@ -44,29 +44,45 @@ public final class SingleAudioPlayerManager {
 
     public static void initOAuth(String oauthToken) {
         if (oauthToken != null && !oauthToken.isEmpty()) {
-            logger.info("Enabling oAuth with existing token.");
-            youtube.useOauth2(oauthToken, true);
+            try {
+                logger.info("Enabling oAuth with existing token.");
+                youtube.useOauth2(oauthToken, true);
+            } catch (Exception e) {
+                logger.info("Error using OAuth token!", e);
+            }
         } else {
-            youtube.useOauth2(null, false);
+            try {
+                youtube.useOauth2(null, false);
+            } catch (Exception e) {
+                logger.info("Error initializing OAuth!", e);
+            }
         }
     }
 
     public static void initPoToken(String poToken, String visitorData) {
-        if (poToken != null && !poToken.isEmpty()) {
-            logger.info("Using provided poToken and visitorData.");
-            Web.setPoTokenAndVisitorData(poToken, visitorData);
+        if (poToken != null && !poToken.isEmpty() && visitorData != null && !visitorData.isEmpty()) {
+            try {
+                Web.setPoTokenAndVisitorData(poToken, visitorData);
+                logger.info("Using provided poToken and visitorData.");
+            } catch (Exception e) {
+                logger.info("Error using PO Token!", e);
+            }
         }
     }
 
     public static void initYoutubeRotation(String ipv6Block) {
         if (ipv6Block != null && !ipv6Block.isEmpty()) {
             logger.info("Enabling IPv6 rotation for YouTube.");
-            final List<IpBlock> blocks = Collections.singletonList(new Ipv6Block(ipv6Block));
-            final AbstractRoutePlanner planner = new RotatingNanoIpRoutePlanner(blocks);
-            YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(planner);
-            rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
-                    .withMainDelegateFilter(null)
-                    .setup();
+            try {
+                final List<IpBlock> blocks = Collections.singletonList(new Ipv6Block(ipv6Block));
+                final AbstractRoutePlanner planner = new RotatingNanoIpRoutePlanner(blocks);
+                YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(planner);
+                rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
+                        .withMainDelegateFilter(null)
+                        .setup();
+            } catch (Exception e) {
+                logger.info("Error initializing IP rotation!", e);
+            }
 
         } else {
             logger.info("No IPv6 block set, IP rotation will be disabled.");
