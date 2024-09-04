@@ -16,6 +16,12 @@ public final class GuildAudioManager {
     @Value("${kanonbot.ipv6block}")
     private String ipv6Block;
 
+    @Value("${kanonbot.potoken}")
+    private String poToken;
+
+    @Value("${kanonbot.visitordata}")
+    private String visitorData;
+
     @Value("${kanonbot.useoauth}")
     private String useOAuth;
 
@@ -51,6 +57,7 @@ public final class GuildAudioManager {
     @PostConstruct
     private void initialize() {
         SingleAudioPlayerManager.initYoutubeRotation(ipv6Block);
+        SingleAudioPlayerManager.initPoToken(poToken, visitorData);
         if (useOAuth.equals("true")) {
             SingleAudioPlayerManager.initOAuth(oAuthToken);
         }

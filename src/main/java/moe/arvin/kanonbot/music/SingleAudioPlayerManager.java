@@ -34,7 +34,7 @@ public final class SingleAudioPlayerManager {
         PLAYER_MANAGER.getConfiguration().setFilterHotSwapEnabled(true);
         youtube = new YoutubeAudioSourceManager(
                 true,
-                new Client[] { new Music(), new Web(), new AndroidTestsuite(), new TvHtml5Embedded()}
+                new Client[] { new Web(), new AndroidTestsuite(), new TvHtml5Embedded(), new Music()}
         );
         PLAYER_MANAGER.registerSourceManager(youtube);
         AudioSourceManagers.registerRemoteSources(PLAYER_MANAGER, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
@@ -51,9 +51,16 @@ public final class SingleAudioPlayerManager {
         }
     }
 
+    public static void initPoToken(String poToken, String visitorData) {
+        if (poToken != null && !poToken.isEmpty()) {
+            logger.info("Using provided poToken and visitorData.");
+            Web.setPoTokenAndVisitorData(poToken, visitorData);
+        }
+    }
+
     public static void initYoutubeRotation(String ipv6Block) {
         if (ipv6Block != null && !ipv6Block.isEmpty()) {
-            logger.info("Enabling IPv6 rotation for YouTube");
+            logger.info("Enabling IPv6 rotation for YouTube.");
             final List<IpBlock> blocks = Collections.singletonList(new Ipv6Block(ipv6Block));
             final AbstractRoutePlanner planner = new RotatingNanoIpRoutePlanner(blocks);
             YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(planner);
@@ -62,7 +69,7 @@ public final class SingleAudioPlayerManager {
                     .setup();
 
         } else {
-            logger.info("No IPv6 block set, IP rotation will be disabled");
+            logger.info("No IPv6 block set, IP rotation will be disabled.");
         }
     }
 
