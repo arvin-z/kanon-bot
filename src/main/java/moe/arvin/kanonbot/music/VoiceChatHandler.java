@@ -159,6 +159,11 @@ public class VoiceChatHandler {
         return true;
     }
 
+    @SuppressWarnings("unused")
+    public boolean isVoiceChannelJoined() {
+        return voiceChannelJoined;
+    }
+
     public EmbedCreateSpec getQueuedEmbed(AudioTrack track, Member mem) {
         String memID = mem.getId().asString();
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
@@ -176,5 +181,11 @@ public class VoiceChatHandler {
         return builder.build();
     }
 
-
+    @SuppressWarnings("unused")
+    public EmbedCreateSpec getNoVCEmbed() {
+        EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+        builder.color(Color.RED);
+        builder.description("You have to be connected to a voice channel before you can use this command!");
+        return builder.build();
+    }
 }
