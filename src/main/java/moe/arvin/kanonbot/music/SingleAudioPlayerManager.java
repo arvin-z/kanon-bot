@@ -78,7 +78,7 @@ public final class SingleAudioPlayerManager {
                 final AbstractRoutePlanner planner = new RotatingNanoIpRoutePlanner(blocks);
                 YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(planner);
                 rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
-                        .withMainDelegateFilter(null)
+                        .withMainDelegateFilter(youtube.getContextFilter())
                         .setup();
             } catch (Exception e) {
                 logger.info("Error initializing IP rotation!", e);
