@@ -12,7 +12,7 @@ import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.Ipv6Block;
 import dev.lavalink.youtube.YoutubeAudioSourceManager;
 import dev.lavalink.youtube.clients.*;
-import dev.lavalink.youtube.clients.skeleton.Client;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

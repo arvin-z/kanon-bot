@@ -12,12 +12,9 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
-import discord4j.voice.AudioProvider;
 import discord4j.voice.VoiceConnection;
 import moe.arvin.kanonbot.util.URLUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+
 
 public class VoiceChatHandler {
 
@@ -99,7 +96,7 @@ public class VoiceChatHandler {
                 return false;
             } else if (!gAM.getScheduler().isPlaying()) {
                 // nothing playing
-                if (gAM.getScheduler().getQueue().size() > 0) {
+                if (!gAM.getScheduler().getQueue().isEmpty()) {
                     // start from start
                     gAM.getScheduler().playFromStart();
                 }
@@ -162,10 +159,6 @@ public class VoiceChatHandler {
         return true;
     }
 
-    public boolean isVoiceChannelJoined() {
-        return voiceChannelJoined;
-    }
-
     public EmbedCreateSpec getQueuedEmbed(AudioTrack track, Member mem) {
         String memID = mem.getId().asString();
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
@@ -179,14 +172,9 @@ public class VoiceChatHandler {
     public EmbedCreateSpec getQueuedEmbed(int numTracks) {
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.color(Color.MOON_YELLOW);
-        builder.description("Queued **" + Integer.toString(numTracks) + "** tracks");
+        builder.description("Queued **" + numTracks + "** tracks");
         return builder.build();
     }
 
-    public EmbedCreateSpec getNoVCEmbed() {
-        EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
-        builder.color(Color.RED);
-        builder.description("You have to be connected to a voice channel before you can use this command!");
-        return builder.build();
-    }
+
 }
