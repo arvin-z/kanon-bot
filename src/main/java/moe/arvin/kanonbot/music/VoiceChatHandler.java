@@ -14,7 +14,7 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 import discord4j.voice.AudioProvider;
 import discord4j.voice.VoiceConnection;
-import org.apache.commons.validator.routines.UrlValidator;
+import moe.arvin.kanonbot.util.URLUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -109,10 +109,10 @@ public class VoiceChatHandler {
             }
         }
         String[] URLPrefixes = {"http", "https"};
-        UrlValidator urlValidator = new UrlValidator(URLPrefixes);
-        if (!urlValidator.isValid(trackArg)) {
+        if (!URLUtil.isValidURL(trackArg, URLPrefixes)) {
             trackArg = "ytsearch: " + trackArg;
         }
+
         audioPlayerManager.loadItem(trackArg, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack audioTrack) {

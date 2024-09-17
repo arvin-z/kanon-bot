@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 
-
+@SuppressWarnings("deprecation")
 public final class SingleAudioPlayerManager {
 
     private static final AudioPlayerManager PLAYER_MANAGER;
@@ -34,8 +34,7 @@ public final class SingleAudioPlayerManager {
         PLAYER_MANAGER.getConfiguration().setFilterHotSwapEnabled(true);
         youtube = new YoutubeAudioSourceManager(
                 true,
-                new Client[] { new Web(), new AndroidTestsuite(), new TvHtml5Embedded(), new Music()}
-        );
+                new Web(), new AndroidTestsuite(), new TvHtml5Embedded(), new Music());
         PLAYER_MANAGER.registerSourceManager(youtube);
         AudioSourceManagers.registerRemoteSources(PLAYER_MANAGER, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
         AudioSourceManagers.registerLocalSource(PLAYER_MANAGER);
@@ -74,6 +73,7 @@ public final class SingleAudioPlayerManager {
         if (ipv6Block != null && !ipv6Block.isEmpty()) {
             logger.info("Enabling IPv6 rotation for YouTube.");
             try {
+                @SuppressWarnings("rawtypes")
                 final List<IpBlock> blocks = Collections.singletonList(new Ipv6Block(ipv6Block));
                 final AbstractRoutePlanner planner = new RotatingNanoIpRoutePlanner(blocks);
                 YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(planner);
