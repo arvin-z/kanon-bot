@@ -1,6 +1,5 @@
 package moe.arvin.kanonbot.music;
 
-import com.github.natanbc.lavadsp.timescale.TimescalePcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -9,9 +8,6 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.*;
@@ -28,10 +24,10 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     private Timer localLoopTimer;
     private boolean localLoopActive;
 
-    private TextChatHandler textChat;
+    private final TextChatHandler textChat;
     Message playStartMsg;
 
-    private FilterChainConfiguration filterChainConfiguration;
+    private final FilterChainConfiguration filterChainConfiguration;
 
     private long positionBasis;
 
@@ -168,8 +164,9 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return loopState;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean playFromStart() {
-        if (queue.size() > 0) {
+        if (!queue.isEmpty()) {
             if (nowPlayingIdx >= 0) {
                 queue.set(nowPlayingIdx, queue.get(nowPlayingIdx).makeClone());
             }
@@ -199,6 +196,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return player.startTrack(track, !force);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean stop() {
         if (!queue.isEmpty()) {
             if (player.getPlayingTrack() != null) {
@@ -314,7 +312,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public boolean seek(int sec) {
         if (isPlaying()) {
-            long s = (long) Math.abs(sec);
+            long s = Math.abs(sec);
             long ms = s * 1000;
             long dur = player.getPlayingTrack().getDuration();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
@@ -360,6 +358,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean repeatPrev() {
         if (!queue.isEmpty()) {
             return play(queue.get(nowPlayingIdx), true, false);
