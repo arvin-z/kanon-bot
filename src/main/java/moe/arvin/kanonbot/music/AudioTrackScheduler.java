@@ -256,10 +256,9 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             nowPlayingIdx--;
         } else {
             queue.remove(i);
-            if (queue.isEmpty()) {
+            if (queue.isEmpty() || nowPlayingIdx >= queue.size() - 1) {
                 stop();
             } else {
-                nowPlayingIdx--;
                 play(queue.get(nowPlayingIdx), true, false);
             }
         }
