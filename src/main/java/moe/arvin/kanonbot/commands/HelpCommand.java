@@ -18,7 +18,7 @@ public class HelpCommand implements Command {
     @Value("${kanonbot.prefix}")
     private char cmdPrefix;
 
-    public HelpCommand(List<Command> commands, GuildAudioManagerFactory gAMFactory) {
+    public HelpCommand(List<Command> commands) {
         this.commands = commands;
     }
 
