@@ -246,12 +246,12 @@ public class AudioTrackScheduler {
         } else if (nowPlayingIdx == -1) {
             nowPlayingIdx = queue.size() - 1;
         }
-        AtomicBoolean isPlaying = new AtomicBoolean(true);
+        AtomicBoolean isPlaying = new AtomicBoolean(false);
         this.gAM.getCachedPlayer().ifPresentOrElse(
                 (player) -> {
                     // check if queuing
                     if (player.getTrack() == null) {
-                        isPlaying.set(false);
+                        isPlaying.set(true);
                     }
                     // start track
                     this.gAM.getCachedLink().ifPresent(
