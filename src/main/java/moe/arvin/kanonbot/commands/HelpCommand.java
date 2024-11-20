@@ -3,7 +3,6 @@ package moe.arvin.kanonbot.commands;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
-import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
