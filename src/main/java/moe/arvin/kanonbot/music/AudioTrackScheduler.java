@@ -114,7 +114,14 @@ public class AudioTrackScheduler {
             sb.append(ellipsize(queue.get(i).getInfo().getTitle(), 37, true));
             sb.append(" ");
             if (i == nowPlayingIdx) {
-                sb.append(convertMsToHms(queue.get(i).getInfo().getLength()-queue.get(i).getInfo().getPosition())).append(" left\n");
+                final Link link = this.gAM.getOrCreateLink();
+                final LavalinkPlayer player = link.getCachedPlayer();
+
+                if (player == null) {
+                    throw new IllegalStateException("player is null!");
+                }
+
+                sb.append(convertMsToHms(queue.get(i).getInfo().getLength()-player.getState().getPosition())).append(" left\n");
             } else {
                 sb.append(convertMsToHms(queue.get(i).getInfo().getLength())).append("\n");
             }
@@ -139,7 +146,7 @@ public class AudioTrackScheduler {
             throw new IllegalStateException("track is null!");
         }
 
-        long pos = currTrack.getInfo().getPosition() - positionBasis;
+        long pos = player.getState().getPosition() - positionBasis;
 
         double speed;
         Omissible<Timescale> timescaleOmissible = link.getCachedPlayer().getFilters().getTimescale();

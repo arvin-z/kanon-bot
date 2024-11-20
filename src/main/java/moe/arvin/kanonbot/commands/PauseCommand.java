@@ -9,6 +9,7 @@ import moe.arvin.kanonbot.music.TextChatHandler;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Optional;
 
 @Component
@@ -45,7 +46,11 @@ public class PauseCommand implements Command {
         boolean paused = gAM.getScheduler().pause();
         if (paused) {
             return message.addReaction(ReactionEmoji.unicode("⏸️"))
-                    .then();
+                    .then(Mono.defer(() -> {
+                        // Optional: Add a delay to ensure the reaction stays
+                        return Mono.delay(Duration.ofSeconds(1))
+                                .then();
+                    }));
         } else {
             TextChatHandler.sendErrorEmbedToMsgChannel(message, "You must be playing a track to use this command!");
         }
