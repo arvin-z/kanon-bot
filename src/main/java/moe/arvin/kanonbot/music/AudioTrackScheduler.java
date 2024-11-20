@@ -7,7 +7,6 @@ import dev.arbjerg.lavalink.client.Link;
 import dev.arbjerg.lavalink.client.player.FilterBuilder;
 import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
 import dev.arbjerg.lavalink.client.player.Track;
-import dev.arbjerg.lavalink.protocol.v4.Filters;
 import dev.arbjerg.lavalink.protocol.v4.Omissible;
 import dev.arbjerg.lavalink.protocol.v4.Timescale;
 import discord4j.core.object.entity.Member;
