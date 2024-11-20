@@ -5,9 +5,8 @@ import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.voice.AudioProvider;
 import moe.arvin.kanonbot.music.GuildAudioManager;
-import moe.arvin.kanonbot.music.LavaPlayerAudioProvider;
+import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
 import moe.arvin.kanonbot.music.VoiceChatHandler;
 import org.springframework.stereotype.Component;
@@ -17,6 +16,12 @@ import java.util.Optional;
 
 @Component
 public class JoinCommand implements Command {
+
+    private final GuildAudioManagerFactory gAMFactory;
+
+    public JoinCommand(GuildAudioManagerFactory gAMFactory) {
+        this.gAMFactory = gAMFactory;
+    }
 
     @Override
     public String getName() {
@@ -34,7 +39,7 @@ public class JoinCommand implements Command {
         if (guildID.isEmpty()) {
             return Mono.empty();
         }
-        GuildAudioManager gAM = GuildAudioManager.of(guildID.get());
+        GuildAudioManager gAM = gAMFactory.get(guildID.get());
         final VoiceChatHandler vcHandler = gAM.getVoiceChatHandler();
         final TextChatHandler chatHandler = gAM.getTextChatHandler();
         return joinVC(message, vcHandler, chatHandler);

@@ -1,22 +1,25 @@
 package moe.arvin.kanonbot.music;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+import dev.arbjerg.lavalink.client.player.FilterBuilder;
+import dev.arbjerg.lavalink.client.player.Track;
+import dev.arbjerg.lavalink.protocol.v4.Filters;
+import dev.arbjerg.lavalink.protocol.v4.Omissible;
+import dev.arbjerg.lavalink.protocol.v4.Timescale;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
+import dev.arbjerg.lavalink.protocol.v4.Message.EmittedEvent.TrackEndEvent.AudioTrackEndReason;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 
 import java.time.Duration;
 import java.util.*;
 
-public class AudioTrackScheduler extends AudioEventAdapter {
+public class AudioTrackScheduler {
 
-    private final List<AudioTrack> queue;
+    private final GuildAudioManager gAM;
+    private final List<Track> queue;
+
     private int nowPlayingIdx;
-    private final AudioPlayer player;
 
     // 0 = disabled, 1 = looping track, 2 = looping queue
     private int loopState;
@@ -27,23 +30,19 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     private final TextChatHandler textChat;
     Message playStartMsg;
 
-    private final FilterChainConfiguration filterChainConfiguration;
-
     private long positionBasis;
 
-    public AudioTrackScheduler(final AudioPlayer player, TextChatHandler txtChat, FilterChainConfiguration fcc) {
+    public AudioTrackScheduler(GuildAudioManager guildAudioManager, TextChatHandler txtChat) {
+        this.gAM = guildAudioManager;
         nowPlayingIdx = -1;
         queue = Collections.synchronizedList(new ArrayList<>());
-        this.player = player;
         this.textChat = txtChat;
-        this.filterChainConfiguration = fcc;
-        this.player.setFrameBufferDuration(300);
         this.localLoopActive = false;
         this.localLoopTimer = new Timer();
         this.positionBasis = 0;
     }
 
-    public List<AudioTrack> getQueue() {
+    public List<Track> getQueue() {
         return queue;
     }
 
@@ -51,7 +50,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         if (!isPlaying()) {
             Collections.shuffle(queue);
         } else {
-            AudioTrack curr = queue.get(nowPlayingIdx);
+            Track curr = queue.get(nowPlayingIdx);
             Collections.shuffle(queue);
             nowPlayingIdx = queue.indexOf(curr);
         }
@@ -107,12 +106,12 @@ public class AudioTrackScheduler extends AudioEventAdapter {
                 sb.append("    ⬐ current track                        \n");
             }
             sb.append(i + 1).append(") ");
-            sb.append(ellipsize(queue.get(i).getInfo().title, 37, true));
+            sb.append(ellipsize(queue.get(i).getInfo().getTitle(), 37, true));
             sb.append(" ");
             if (i == nowPlayingIdx) {
-                sb.append(convertMsToHms(queue.get(i).getDuration()-queue.get(i).getPosition())).append(" left\n");
+                sb.append(convertMsToHms(queue.get(i).getInfo().getLength()-queue.get(i).getInfo().getPosition())).append(" left\n");
             } else {
-                sb.append(convertMsToHms(queue.get(i).getDuration())).append("\n");
+                sb.append(convertMsToHms(queue.get(i).getInfo().getLength())).append("\n");
             }
             if (i == nowPlayingIdx) {
                 sb.append("    ⬑ current track                        \n");
@@ -122,25 +121,35 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     }
 
     public long getRelativePosition() {
-        AudioTrack currTrack = player.getPlayingTrack();
-        long pos = currTrack.getPosition() - positionBasis;
-        double speed = filterChainConfiguration.timescale().speed();
+        Track currTrack = this.gAM.getPlayer().getTrack();
+        assert currTrack != null;
+        long pos = currTrack.getInfo().getPosition() - positionBasis;
+
+        double speed;
+        Omissible<Timescale> timescaleOmissible = gAM.getPlayer().getFilters().getTimescale();
+        if (timescaleOmissible instanceof Omissible.Present<Timescale> present) {
+            speed = present.getValue().getSpeed();
+        } else {
+            speed = 1.0;
+        }
+
         return (long)(pos * speed + positionBasis);
     }
 
     public EmbedCreateSpec nowPlayingToEmbed() {
-        AudioTrack currTrack = player.getPlayingTrack();
+        Track currTrack = this.gAM.getPlayer().getTrack();
+        assert currTrack != null;
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         if (!isPlaying()) {
             builder.color(Color.RED);
             builder.description("You must be playing a track to use this command!");
         } else {
-            String memID = (String) currTrack.getUserData();
+            String memID = currTrack.getUserData(String.class);
             builder.color(Color.MOON_YELLOW);
             builder.description("[" +
-                    ellipsize(currTrack.getInfo().title, 65, false) +
-                    "](" + currTrack.getInfo().uri + ") [<@" + memID + ">]");
-            builder.footer(makeProgressBar(getRelativePosition(), currTrack.getDuration()), null);
+                    ellipsize(currTrack.getInfo().getTitle(), 65, false) +
+                    "](" + currTrack.getInfo().getUri() + ") [<@" + memID + ">]");
+            builder.footer(makeProgressBar(getRelativePosition(), currTrack.getInfo().getLength()), null);
         }
         return builder.build();
     }
@@ -178,12 +187,12 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         return false;
     }
 
-    public boolean play(final AudioTrack track, Member mem) {
+    public boolean play(final Track track, Member mem) {
         track.setUserData(mem.getId().asString());
         return play(track, false, true);
     }
 
-    public boolean play(final AudioTrack track, final boolean force, final boolean addToQueue) {
+    public boolean play(final Track track, final boolean force, final boolean addToQueue) {
         if (addToQueue) {
             queue.add(track);
         }
@@ -193,14 +202,15 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             nowPlayingIdx = queue.size() - 1;
         }
 
-        return player.startTrack(track, !force);
+        this.gAM.getPlayer().setTrack(track).setNoReplace(!force).block();
+        return true;
     }
 
     @SuppressWarnings("UnusedReturnValue")
     public boolean stop() {
         if (!queue.isEmpty()) {
-            if (player.getPlayingTrack() != null) {
-                player.stopTrack();
+            if (this.gAM.getPlayer().getTrack() != null) {
+                this.gAM.getPlayer().stopTrack();
                 nowPlayingIdx = -1;
                 return true;
             }
@@ -235,7 +245,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
         String searchArgLower = searchArg.toLowerCase();
 
         for (int i = 0; i < queue.size(); i++) {
-            if (queue.get(i).getInfo().title.toLowerCase().contains(searchArgLower)) {
+            if (queue.get(i).getInfo().getTitle().toLowerCase().contains(searchArgLower)) {
                 return jump(i+1);
             }
         }
@@ -265,7 +275,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public boolean pause() {
         if (isPlaying()) {
-            player.setPaused(true);
+            this.gAM.getPlayer().setPaused(true);
             return true;
         }
         return false;
@@ -273,7 +283,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public boolean unpause() {
         if (isPlaying()) {
-            player.setPaused(false);
+            this.gAM.getPlayer().setPaused(false);
             return true;
         }
         return false;
@@ -311,27 +321,27 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     }
 
     public boolean seek(int sec) {
-        if (isPlaying()) {
+        if (isPlaying() && this.gAM.getPlayer().getTrack() != null) {
             long s = Math.abs(sec);
             long ms = s * 1000;
-            long dur = player.getPlayingTrack().getDuration();
+            long dur = this.gAM.getPlayer().getTrack().getInfo().getLength();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
             positionBasis = safeSeek;
-            player.getPlayingTrack().setPosition(safeSeek);
+            this.gAM.getPlayer().setPosition(safeSeek);
             return true;
         }
         return false;
     }
 
     public boolean forwardOrRewind(int sec) {
-        if (isPlaying()) {
+        if (isPlaying() && this.gAM.getPlayer().getTrack() != null) {
             int ms = sec * 1000;
-            long dur = player.getPlayingTrack().getDuration();
+            long dur = this.gAM.getPlayer().getTrack().getInfo().getLength();
             long currPos = getRelativePosition();
             long newPos = currPos + ms;
             long safePos = Math.min(Math.max(newPos, 0), dur-1);
             positionBasis = safePos;
-            player.getPlayingTrack().setPosition(safePos);
+            this.gAM.getPlayer().setPosition(safePos);
             return true;
         }
         return false;
@@ -374,7 +384,7 @@ public class AudioTrackScheduler extends AudioEventAdapter {
                     return true;
                 }
             } else if (nowPlayingIdx < queue.size() && nowPlayingIdx == 0) {
-                AudioTrack cloneTrack = queue.get(nowPlayingIdx).makeClone();
+                Track cloneTrack = queue.get(nowPlayingIdx).makeClone();
                 boolean played = play(cloneTrack, true, false);
                 if (played) {
                     queue.set(nowPlayingIdx, cloneTrack);
@@ -388,8 +398,18 @@ public class AudioTrackScheduler extends AudioEventAdapter {
     public boolean changeSpeed(double multiplier) {
         if (isPlaying()) {
             positionBasis = getRelativePosition();
-            filterChainConfiguration.timescale().setSpeed(multiplier);
-            this.player.setFilterFactory(filterChainConfiguration.factory());
+
+            FilterBuilder filterBuilder = new FilterBuilder();
+            Timescale newTimescale;
+            Omissible<Timescale> timescaleOmissible = gAM.getPlayer().getFilters().getTimescale();
+            if (timescaleOmissible instanceof Omissible.Present<Timescale> present) {
+                newTimescale = new Timescale(multiplier, present.getValue().getPitch(), present.getValue().getRate());
+            } else {
+                newTimescale = new Timescale(multiplier, 1.0, 1.0);
+            }
+
+            Filters filters = filterBuilder.setTimescale(newTimescale).build();
+            this.gAM.getPlayer().setFilters(filters);
             return true;
         }
         return false;
@@ -397,38 +417,45 @@ public class AudioTrackScheduler extends AudioEventAdapter {
 
     public boolean changePitch(double val) {
         if (isPlaying()) {
-            filterChainConfiguration.timescale().setPitch(val);
-            this.player.setFilterFactory(filterChainConfiguration.factory());
+            FilterBuilder filterBuilder = new FilterBuilder();
+            Timescale newTimescale;
+            Omissible<Timescale> timescaleOmissible = gAM.getPlayer().getFilters().getTimescale();
+            if (timescaleOmissible instanceof Omissible.Present<Timescale> present) {
+                newTimescale = new Timescale(present.getValue().getSpeed(), val, present.getValue().getRate());
+            } else {
+                newTimescale = new Timescale(1.0, val, 1.0);
+            }
+
+            Filters filters = filterBuilder.setTimescale(newTimescale).build();
+            this.gAM.getPlayer().setFilters(filters);
             return true;
         }
         return false;
     }
 
-    @Override
-    public void onTrackStart(AudioPlayer player, AudioTrack track) {
+    public void onTrackStart(Track track) {
         positionBasis = 0;
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.title("Now playing");
-        String memID = (String) track.getUserData();
+        String memID = track.getUserData(String.class);
         builder.color(Color.MOON_YELLOW);
         builder.description("[" +
-                ellipsize(track.getInfo().title, 65, false) +
-                "](" + track.getInfo().uri + ") [<@" + memID + ">]");
+                ellipsize(track.getInfo().getTitle(), 65, false) +
+                "](" + track.getInfo().getUri() + ") [<@" + memID + ">]");
         this.playStartMsg = textChat.getActiveTextChannel().createMessage(builder.build()).share().block();
     }
 
-    @Override
-    public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+    public void onTrackEnd(Track lastTrack, AudioTrackEndReason endReason) {
         if (localLoopActive) {
             localLoopTimer.cancel();
             localLoopTimer = new Timer();
             localLoopActive = false;
         }
-        queue.set(nowPlayingIdx, track.makeClone());
+        queue.set(nowPlayingIdx, lastTrack.makeClone());
         if (this.playStartMsg != null) {
             playStartMsg.delete().share().block();
         }
-        if (endReason.mayStartNext) {
+        if (endReason.getMayStartNext()) {
             if (loopState == 1) {
                 repeatPrev();
             } else {
@@ -436,7 +463,6 @@ public class AudioTrackScheduler extends AudioEventAdapter {
             }
         }
     }
-
 
     public static String makeProgressBar(long pos, long dur) {
         double progress = ((double) pos / dur);

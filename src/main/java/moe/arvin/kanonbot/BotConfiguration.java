@@ -1,16 +1,15 @@
 package moe.arvin.kanonbot;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
+
+import dev.arbjerg.lavalink.client.LavalinkClient;
+import dev.arbjerg.lavalink.libraries.discord4j.D4JVoiceHandler;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.Event;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.gateway.intent.IntentSet;
+import jakarta.annotation.PreDestroy;
 import moe.arvin.kanonbot.listeners.EventListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,25 +22,39 @@ public class BotConfiguration {
     @Value("${kanonbot.token}")
     private String token;
 
+    private GatewayDiscordClient discordClient;
+
+
     @Bean
-    public <T extends Event> GatewayDiscordClient gatewayDiscordClient(List<EventListener<T>> eventListeners) {
-        GatewayDiscordClient client = DiscordClientBuilder.create(token).build()
+    public <T extends Event> GatewayDiscordClient gatewayDiscordClient(List<EventListener<T>> eventListeners, LavalinkClient lavalinkClient) {
+        discordClient = DiscordClientBuilder.create(token).build()
                 .gateway()
                 .setEnabledIntents(IntentSet.all())
                 .setInitialPresence(ignore -> ClientPresence.online(ClientActivity.listening(" ")))
                 .login()
                 .block();
 
+        if (discordClient == null) {
+            return null;
+        }
+
+        D4JVoiceHandler.install(discordClient, lavalinkClient);
+
         for (EventListener<T> listener : eventListeners) {
-            if (client == null) {
-                continue;
-            }
-            client.on(listener.getEventType())
+
+            discordClient.on(listener.getEventType())
                     .flatMap(listener::execute)
                     .onErrorResume(listener::handleError)
                     .subscribe();
         }
 
-        return client;
+        return discordClient;
+    }
+
+    @PreDestroy
+    public void shutdownDiscordClient() {
+        if (discordClient != null) {
+            discordClient.logout().block();
+        }
     }
 }

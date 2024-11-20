@@ -38,13 +38,7 @@ public class TextChatHandler {
 
     public static void sendErrorEmbedToMsgChannel(Message m, String e) {
         MessageChannel c = m.getChannel().block();
-        if (c == null) {
-            return;
-        }
-        EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
-        builder.color(Color.RED);
-        builder.description(e);
-        c.createMessage(builder.build()).block();
+        sendErrorEmbedToMsgChannel(c, e);
     }
 
     public static void sendErrorEmbedToMsgChannel(MessageChannel c, String e) {

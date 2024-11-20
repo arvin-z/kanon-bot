@@ -2,7 +2,7 @@ package moe.arvin.kanonbot.listeners;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
-import moe.arvin.kanonbot.music.GuildAudioManager;
+
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -24,8 +24,7 @@ public class VCDisconnectListener implements EventListener<VoiceStateUpdateEvent
                 LOG.trace("{Guild ID: {}} Voice state update event: {}", guildID.asString(), event);
             }
             if (event.isLeaveEvent()) {
-                GuildAudioManager gAM = GuildAudioManager.of(guildID);
-                gAM.getScheduler().stop();
+                // TODO: Stop the Player
             }
         }
         // LISTEN FOR other users disconnecting
