@@ -170,12 +170,9 @@ public class AudioTrackScheduler {
 
         final Track currTrack = player.getTrack();
 
-        if (currTrack == null) {
-            throw new IllegalStateException("track is null!");
-        }
 
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
-        if (!isPlaying()) {
+        if (!isPlaying() || currTrack == null) {
             builder.color(Color.RED);
             builder.description("You must be playing a track to use this command!");
         } else {
@@ -280,9 +277,9 @@ public class AudioTrackScheduler {
         if (!queue.isEmpty()) {
             this.gAM.getCachedPlayer().ifPresent(
                     (player) -> player.setTrack(null)
+                            .doFinally(unused -> nowPlayingIdx = -1)
                             .subscribe()
             );
-            nowPlayingIdx = -1;
             return true;
         }
         return false;
@@ -456,7 +453,6 @@ public class AudioTrackScheduler {
                     playFromStart();
                 } else {
                     stop();
-                    nowPlayingIdx = -1;
                 }
                 return true;
             }
