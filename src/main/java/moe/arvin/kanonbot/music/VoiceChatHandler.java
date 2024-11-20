@@ -1,5 +1,6 @@
 package moe.arvin.kanonbot.music;
 
+import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
 import dev.arbjerg.lavalink.client.player.Track;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
@@ -9,6 +10,8 @@ import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 import moe.arvin.kanonbot.util.URLUtil;
+
+import java.util.Optional;
 
 public class VoiceChatHandler {
 
@@ -78,9 +81,12 @@ public class VoiceChatHandler {
             // command with no args
             // bind chat
             textChan.setActiveTextChannel(messageChannel);
-            if (gAM.getCachedPlayer().getPaused()) {
+
+            Optional<LavalinkPlayer> cPlayer = gAM.getCachedPlayer();
+            if (cPlayer.isPresent() && cPlayer.get().getPaused()) {
                 // resume
-                gAM.getLink().getPlayer()
+                gAM.getOrCreateLink()
+                        .getPlayer()
                         .flatMap((player) -> player.setPaused(false))
                         .subscribe();
                 return false;
@@ -102,7 +108,9 @@ public class VoiceChatHandler {
 
         // load with trackArg
         this.textChan.setActiveTextChannel(messageChannel);
-        this.gAM.getLink().loadItem(trackArg).subscribe(new AudioLoader(this.gAM, this.textChan, mem));
+        this.gAM.getOrCreateLink()
+                .loadItem(trackArg)
+                .subscribe(new AudioLoader(this.gAM, this.textChan, mem));
         return true;
     }
 
