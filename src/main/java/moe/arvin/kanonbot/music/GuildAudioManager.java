@@ -4,6 +4,8 @@ import dev.arbjerg.lavalink.client.LavalinkClient;
 import dev.arbjerg.lavalink.client.Link;
 import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
 
+import java.util.Optional;
+
 
 public final class GuildAudioManager {
 
@@ -25,12 +27,18 @@ public final class GuildAudioManager {
         scheduler = new AudioTrackScheduler(this, this.textChatHandler);
     }
 
-    public Link getLink() {
+    public Link getOrCreateLink() {
         return this.lavalinkClient.getOrCreateLink(this.guildId);
     }
 
-    public LavalinkPlayer getPlayer() {
-        return this.getLink().getPlayer().block();
+    public Optional<Link> getCachedLink() {
+        return Optional.ofNullable(
+                this.lavalinkClient.getLinkIfCached(this.guildId)
+        );
+    }
+
+    public Optional<LavalinkPlayer> getCachedPlayer() {
+        return this.getCachedLink().map(Link::getCachedPlayer);
     }
 
     public TextChatHandler getTextChatHandler() {

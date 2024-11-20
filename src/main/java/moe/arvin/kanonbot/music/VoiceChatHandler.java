@@ -78,9 +78,11 @@ public class VoiceChatHandler {
             // command with no args
             // bind chat
             textChan.setActiveTextChannel(messageChannel);
-            if (gAM.getPlayer().getPaused()) {
+            if (gAM.getCachedPlayer().getPaused()) {
                 // resume
-                gAM.getPlayer().setPaused(false).block();
+                gAM.getLink().getPlayer()
+                        .flatMap((player) -> player.setPaused(false))
+                        .subscribe();
                 return false;
             } else if (!gAM.getScheduler().isPlaying()) {
                 // nothing playing

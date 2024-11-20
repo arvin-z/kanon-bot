@@ -3,7 +3,9 @@ package moe.arvin.kanonbot.music;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import dev.arbjerg.lavalink.client.Link;
 import dev.arbjerg.lavalink.client.player.FilterBuilder;
+import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
 import dev.arbjerg.lavalink.client.player.Track;
 import dev.arbjerg.lavalink.protocol.v4.Filters;
 import dev.arbjerg.lavalink.protocol.v4.Omissible;
@@ -125,12 +127,23 @@ public class AudioTrackScheduler {
     }
 
     public long getRelativePosition() {
-        Track currTrack = this.gAM.getPlayer().getTrack();
-        assert currTrack != null;
+        final Link link = this.gAM.getOrCreateLink();
+        final LavalinkPlayer player = link.getCachedPlayer();
+
+        if (player == null) {
+            throw new IllegalStateException("player is null!");
+        }
+
+        final Track currTrack = player.getTrack();
+
+        if (currTrack == null) {
+            throw new IllegalStateException("track is null!");
+        }
+
         long pos = currTrack.getInfo().getPosition() - positionBasis;
 
         double speed;
-        Omissible<Timescale> timescaleOmissible = gAM.getPlayer().getFilters().getTimescale();
+        Omissible<Timescale> timescaleOmissible = link.getCachedPlayer().getFilters().getTimescale();
         if (timescaleOmissible instanceof Omissible.Present<Timescale> present) {
             speed = present.getValue().getSpeed();
         } else {
@@ -141,8 +154,19 @@ public class AudioTrackScheduler {
     }
 
     public EmbedCreateSpec nowPlayingToEmbed() {
-        Track currTrack = this.gAM.getPlayer().getTrack();
-        assert currTrack != null;
+        final Link link = this.gAM.getOrCreateLink();
+        final LavalinkPlayer player = link.getCachedPlayer();
+
+        if (player == null) {
+            throw new IllegalStateException("player is null!");
+        }
+
+        final Track currTrack = player.getTrack();
+
+        if (currTrack == null) {
+            throw new IllegalStateException("track is null!");
+        }
+
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         if (!isPlaying()) {
             builder.color(Color.RED);
@@ -215,22 +239,39 @@ public class AudioTrackScheduler {
         } else if (nowPlayingIdx == -1) {
             nowPlayingIdx = queue.size() - 1;
         }
+        this.gAM.getCachedPlayer().ifPresentOrElse(
+                (player) -> {
+                    // start track
+                    this.gAM.getCachedLink().ifPresent(
+                            (link) -> link.createOrUpdatePlayer()
+                                    .setTrack(track)
+                                    .setNoReplace(!force)
+                                    .subscribe()
+                    );
+                },
+                () -> {
+                    // start track
+                    this.gAM.getCachedLink().ifPresent(
+                            (link) -> link.createOrUpdatePlayer()
+                                    .setTrack(track)
+                                    .setNoReplace(!force)
+                                    .subscribe()
+                    );
+                }
+        );
 
-        this.gAM.getLink().createOrUpdatePlayer()
-                .setTrack(track)
-                .setNoReplace(!force)
-                .subscribe();
         return true;
     }
 
     @SuppressWarnings("UnusedReturnValue")
     public boolean stop() {
         if (!queue.isEmpty()) {
-            if (this.gAM.getPlayer().getTrack() != null) {
-                this.gAM.getPlayer().setTrack(null).subscribe();
-                nowPlayingIdx = -1;
-                return true;
-            }
+            nowPlayingIdx = -1;
+            this.gAM.getCachedPlayer().ifPresent(
+                    (player) -> player.setTrack(null)
+                            .subscribe()
+            );
+            return true;
         }
         return false;
     }
@@ -292,7 +333,10 @@ public class AudioTrackScheduler {
 
     public boolean pause() {
         if (isPlaying()) {
-            this.gAM.getPlayer().setPaused(true).subscribe();
+            this.gAM.getOrCreateLink()
+                    .getPlayer()
+                    .flatMap((player) -> player.setPaused(true))
+                    .subscribe();
             return true;
         }
         return false;
@@ -300,7 +344,10 @@ public class AudioTrackScheduler {
 
     public boolean unpause() {
         if (isPlaying()) {
-            this.gAM.getPlayer().setPaused(false).subscribe();
+            this.gAM.getOrCreateLink()
+                    .getPlayer()
+                    .flatMap((player) -> player.setPaused(false))
+                    .subscribe();
             return true;
         }
         return false;
@@ -338,27 +385,47 @@ public class AudioTrackScheduler {
     }
 
     public boolean seek(int sec) {
-        if (isPlaying() && this.gAM.getPlayer().getTrack() != null) {
+        final Link link = this.gAM.getOrCreateLink();
+        final LavalinkPlayer cPlayer = link.getCachedPlayer();
+        if (cPlayer == null) {
+            return false;
+        }
+        final Track track = cPlayer.getTrack();
+
+        if (isPlaying() && track != null) {
             long s = Math.abs(sec);
             long ms = s * 1000;
-            long dur = this.gAM.getPlayer().getTrack().getInfo().getLength();
+            long dur = track.getInfo().getLength();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
             positionBasis = safeSeek;
-            this.gAM.getPlayer().setPosition(safeSeek).subscribe();
+
+            link.getPlayer()
+                    .flatMap((player) -> player.setPosition(safeSeek))
+                    .subscribe();
+
             return true;
         }
         return false;
     }
 
     public boolean forwardOrRewind(int sec) {
-        if (isPlaying() && this.gAM.getPlayer().getTrack() != null) {
+        final Link link = this.gAM.getOrCreateLink();
+        final LavalinkPlayer cPlayer = link.getCachedPlayer();
+        if (cPlayer == null) {
+            return false;
+        }
+        final Track track = cPlayer.getTrack();
+
+        if (isPlaying() && track != null) {
             int ms = sec * 1000;
-            long dur = this.gAM.getPlayer().getTrack().getInfo().getLength();
+            long dur = track.getInfo().getLength();
             long currPos = getRelativePosition();
             long newPos = currPos + ms;
             long safePos = Math.min(Math.max(newPos, 0), dur-1);
             positionBasis = safePos;
-            this.gAM.getPlayer().setPosition(safePos).subscribe();
+            link.getPlayer()
+                    .flatMap((player) -> player.setPosition(safePos))
+                    .subscribe();
             return true;
         }
         return false;
@@ -414,21 +481,33 @@ public class AudioTrackScheduler {
 
     public boolean changeSpeed(double multiplier) {
         if (isPlaying()) {
+            final Link link = this.gAM.getOrCreateLink();
+            final LavalinkPlayer cPlayer = link.getCachedPlayer();
+
+            if (cPlayer == null) {
+                return false;
+            }
+
             positionBasis = getRelativePosition();
 
-            FilterBuilder filterBuilder = new FilterBuilder();
             Timescale newTimescale;
-            Omissible<Timescale> timescaleOmissible = gAM.getPlayer().getFilters().getTimescale();
+            Omissible<Timescale> timescaleOmissible = cPlayer.getFilters().getTimescale();
             if (timescaleOmissible instanceof Omissible.Present<Timescale> present) {
                 newTimescale = new Timescale(multiplier, present.getValue().getPitch(), present.getValue().getRate());
             } else {
                 newTimescale = new Timescale(multiplier, 1.0, 1.0);
             }
 
-            Filters filters = filterBuilder.setTimescale(newTimescale).build();
-            this.gAM.getLink().createOrUpdatePlayer()
-                    .setFilters(filters)
+            link.createOrUpdatePlayer()
+                    .setFilters(
+                            new FilterBuilder()
+                                    .setTimescale(
+                                            newTimescale
+                                    )
+                                    .build()
+                    )
                     .subscribe();
+
             return true;
         }
         return false;
@@ -436,19 +515,31 @@ public class AudioTrackScheduler {
 
     public boolean changePitch(double val) {
         if (isPlaying()) {
-            FilterBuilder filterBuilder = new FilterBuilder();
+            final Link link = this.gAM.getOrCreateLink();
+            final LavalinkPlayer cPlayer = link.getCachedPlayer();
+
+            if (cPlayer == null) {
+                return false;
+            }
+
             Timescale newTimescale;
-            Omissible<Timescale> timescaleOmissible = gAM.getPlayer().getFilters().getTimescale();
+            Omissible<Timescale> timescaleOmissible = cPlayer.getFilters().getTimescale();
             if (timescaleOmissible instanceof Omissible.Present<Timescale> present) {
                 newTimescale = new Timescale(present.getValue().getSpeed(), val, present.getValue().getRate());
             } else {
                 newTimescale = new Timescale(1.0, val, 1.0);
             }
 
-            Filters filters = filterBuilder.setTimescale(newTimescale).build();
-            this.gAM.getLink().createOrUpdatePlayer()
-                    .setFilters(filters)
+            link.createOrUpdatePlayer()
+                    .setFilters(
+                            new FilterBuilder()
+                                    .setTimescale(
+                                            newTimescale
+                                    )
+                                    .build()
+                    )
                     .subscribe();
+
             return true;
         }
         return false;
