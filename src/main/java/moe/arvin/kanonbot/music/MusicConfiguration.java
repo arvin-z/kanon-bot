@@ -2,7 +2,6 @@ package moe.arvin.kanonbot.music;
 
 import dev.arbjerg.lavalink.client.Helpers;
 import dev.arbjerg.lavalink.client.LavalinkClient;
-import dev.arbjerg.lavalink.client.LavalinkNode;
 import dev.arbjerg.lavalink.client.NodeOptions;
 import dev.arbjerg.lavalink.client.event.ClientEvent;
 import jakarta.annotation.PreDestroy;

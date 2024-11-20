@@ -41,12 +41,11 @@ public class DCCommand implements Command{
         }
         GuildAudioManager gAM = gAMFactory.get(guildID.get());
         final VoiceChatHandler vcHandler = gAM.getVoiceChatHandler();
-        final TextChatHandler chatHandler = gAM.getTextChatHandler();
 
-        return leaveVC(message, vcHandler, chatHandler);
+        return leaveVC(message, vcHandler);
     }
 
-    public Mono<Void> leaveVC(Message msg, VoiceChatHandler vcHandler, TextChatHandler chatHandler) {
+    public Mono<Void> leaveVC(Message msg, VoiceChatHandler vcHandler) {
         return msg.getAuthorAsMember()
                 .flatMap(Member::getVoiceState)
                 .flatMap(VoiceState::getChannel)

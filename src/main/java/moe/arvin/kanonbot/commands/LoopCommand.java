@@ -2,7 +2,6 @@ package moe.arvin.kanonbot.commands;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 import moe.arvin.kanonbot.music.GuildAudioManager;

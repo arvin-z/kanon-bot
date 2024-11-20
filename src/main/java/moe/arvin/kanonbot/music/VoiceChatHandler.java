@@ -8,7 +8,6 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
-import discord4j.voice.VoiceConnection;
 import moe.arvin.kanonbot.util.URLUtil;
 
 public class VoiceChatHandler {

@@ -6,7 +6,6 @@ import discord4j.core.object.reaction.ReactionEmoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
-import moe.arvin.kanonbot.music.VoiceChatHandler;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
