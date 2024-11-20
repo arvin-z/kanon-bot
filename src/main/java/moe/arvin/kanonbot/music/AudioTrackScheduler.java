@@ -18,6 +18,7 @@ import discord4j.rest.util.Color;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioTrackScheduler {
 
@@ -245,8 +246,13 @@ public class AudioTrackScheduler {
         } else if (nowPlayingIdx == -1) {
             nowPlayingIdx = queue.size() - 1;
         }
+        AtomicBoolean isPlaying = new AtomicBoolean(true);
         this.gAM.getCachedPlayer().ifPresentOrElse(
                 (player) -> {
+                    // check if queuing
+                    if (player.getTrack() == null) {
+                        isPlaying.set(false);
+                    }
                     // start track
                     this.gAM.getCachedLink().ifPresent(
                             (link) -> link.createOrUpdatePlayer()
@@ -266,7 +272,7 @@ public class AudioTrackScheduler {
                 }
         );
 
-        return true;
+        return isPlaying.get();
     }
 
     @SuppressWarnings("UnusedReturnValue")
