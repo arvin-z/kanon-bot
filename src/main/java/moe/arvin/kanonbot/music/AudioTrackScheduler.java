@@ -216,7 +216,10 @@ public class AudioTrackScheduler {
             nowPlayingIdx = queue.size() - 1;
         }
 
-        this.gAM.getPlayer().setTrack(track).setNoReplace(!force).block();
+        this.gAM.getLink().createOrUpdatePlayer()
+                .setTrack(track)
+                .setNoReplace(!force)
+                .subscribe();
         return true;
     }
 
@@ -224,7 +227,7 @@ public class AudioTrackScheduler {
     public boolean stop() {
         if (!queue.isEmpty()) {
             if (this.gAM.getPlayer().getTrack() != null) {
-                this.gAM.getPlayer().stopTrack().block();
+                this.gAM.getPlayer().setTrack(null).subscribe();
                 nowPlayingIdx = -1;
                 return true;
             }
@@ -289,7 +292,7 @@ public class AudioTrackScheduler {
 
     public boolean pause() {
         if (isPlaying()) {
-            this.gAM.getPlayer().setPaused(true).block();
+            this.gAM.getPlayer().setPaused(true).subscribe();
             return true;
         }
         return false;
@@ -297,7 +300,7 @@ public class AudioTrackScheduler {
 
     public boolean unpause() {
         if (isPlaying()) {
-            this.gAM.getPlayer().setPaused(false).block();
+            this.gAM.getPlayer().setPaused(false).subscribe();
             return true;
         }
         return false;
@@ -341,7 +344,7 @@ public class AudioTrackScheduler {
             long dur = this.gAM.getPlayer().getTrack().getInfo().getLength();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
             positionBasis = safeSeek;
-            this.gAM.getPlayer().setPosition(safeSeek).block();
+            this.gAM.getPlayer().setPosition(safeSeek).subscribe();
             return true;
         }
         return false;
@@ -355,7 +358,7 @@ public class AudioTrackScheduler {
             long newPos = currPos + ms;
             long safePos = Math.min(Math.max(newPos, 0), dur-1);
             positionBasis = safePos;
-            this.gAM.getPlayer().setPosition(safePos).block();
+            this.gAM.getPlayer().setPosition(safePos).subscribe();
             return true;
         }
         return false;
@@ -423,7 +426,9 @@ public class AudioTrackScheduler {
             }
 
             Filters filters = filterBuilder.setTimescale(newTimescale).build();
-            this.gAM.getPlayer().setFilters(filters).block();
+            this.gAM.getLink().createOrUpdatePlayer()
+                    .setFilters(filters)
+                    .subscribe();
             return true;
         }
         return false;
@@ -441,7 +446,9 @@ public class AudioTrackScheduler {
             }
 
             Filters filters = filterBuilder.setTimescale(newTimescale).build();
-            this.gAM.getPlayer().setFilters(filters).block();
+            this.gAM.getLink().createOrUpdatePlayer()
+                    .setFilters(filters)
+                    .subscribe();
             return true;
         }
         return false;
