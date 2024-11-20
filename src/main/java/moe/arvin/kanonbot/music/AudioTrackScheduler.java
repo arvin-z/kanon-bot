@@ -278,11 +278,11 @@ public class AudioTrackScheduler {
     @SuppressWarnings("UnusedReturnValue")
     public boolean stop() {
         if (!queue.isEmpty()) {
-            nowPlayingIdx = -1;
             this.gAM.getCachedPlayer().ifPresent(
                     (player) -> player.setTrack(null)
                             .subscribe()
             );
+            nowPlayingIdx = -1;
             return true;
         }
         return false;
