@@ -1,5 +1,8 @@
 package moe.arvin.kanonbot.music;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.arbjerg.lavalink.client.player.FilterBuilder;
 import dev.arbjerg.lavalink.client.player.Track;
 import dev.arbjerg.lavalink.protocol.v4.Filters;
@@ -10,6 +13,7 @@ import discord4j.core.object.entity.Message;
 import dev.arbjerg.lavalink.protocol.v4.Message.EmittedEvent.TrackEndEvent.AudioTrackEndReason;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
+
 
 import java.time.Duration;
 import java.util.*;
@@ -144,7 +148,14 @@ public class AudioTrackScheduler {
             builder.color(Color.RED);
             builder.description("You must be playing a track to use this command!");
         } else {
-            String memID = currTrack.getUserData(String.class);
+            String memID;
+            JsonNode userData = currTrack.getUserData();
+            if (userData.has("userId")) {
+                memID = userData.get("userId").asText();
+            } else {
+                memID = "Unknown";
+            }
+
             builder.color(Color.MOON_YELLOW);
             builder.description("[" +
                     ellipsize(currTrack.getInfo().getTitle(), 65, false) +
@@ -188,7 +199,10 @@ public class AudioTrackScheduler {
     }
 
     public boolean play(final Track track, Member mem) {
-        track.setUserData(mem.getId().asString());
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode userData = mapper.createObjectNode();
+        userData.put("userId", mem.getId().asString());
+        track.setUserData(userData);
         return play(track, false, true);
     }
 
@@ -437,7 +451,16 @@ public class AudioTrackScheduler {
         positionBasis = 0;
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.title("Now playing");
-        String memID = track.getUserData(String.class);
+
+        String memID;
+        JsonNode userData = track.getUserData();
+        if (userData.has("userId")) {
+            memID = userData.get("userId").asText();
+        } else {
+            memID = "Unknown";
+        }
+
+
         builder.color(Color.MOON_YELLOW);
         builder.description("[" +
                 ellipsize(track.getInfo().getTitle(), 65, false) +

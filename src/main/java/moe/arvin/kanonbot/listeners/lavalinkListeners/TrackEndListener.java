@@ -5,6 +5,7 @@ import dev.arbjerg.lavalink.client.event.TrackEndEvent;
 import discord4j.common.util.Snowflake;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -13,7 +14,7 @@ public class TrackEndListener implements LavalinkListener<TrackEndEvent> {
 
     private final GuildAudioManagerFactory gAMFactory;
 
-    public TrackEndListener(GuildAudioManagerFactory gAMFactory) {
+    public TrackEndListener(@Lazy GuildAudioManagerFactory gAMFactory) {
         this.gAMFactory = gAMFactory;
     }
 
