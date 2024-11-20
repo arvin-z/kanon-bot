@@ -250,7 +250,7 @@ public class AudioTrackScheduler {
         this.gAM.getCachedPlayer().ifPresentOrElse(
                 (player) -> {
                     // check if queuing
-                    if (player.getTrack() == null) {
+                    if (player.getTrack() == null || force) {
                         isPlaying.set(true);
                     }
                     // start track
