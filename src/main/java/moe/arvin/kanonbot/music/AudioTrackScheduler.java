@@ -224,7 +224,7 @@ public class AudioTrackScheduler {
     public boolean stop() {
         if (!queue.isEmpty()) {
             if (this.gAM.getPlayer().getTrack() != null) {
-                this.gAM.getPlayer().stopTrack();
+                this.gAM.getPlayer().stopTrack().block();
                 nowPlayingIdx = -1;
                 return true;
             }
@@ -289,7 +289,7 @@ public class AudioTrackScheduler {
 
     public boolean pause() {
         if (isPlaying()) {
-            this.gAM.getPlayer().setPaused(true);
+            this.gAM.getPlayer().setPaused(true).block();
             return true;
         }
         return false;
@@ -297,7 +297,7 @@ public class AudioTrackScheduler {
 
     public boolean unpause() {
         if (isPlaying()) {
-            this.gAM.getPlayer().setPaused(false);
+            this.gAM.getPlayer().setPaused(false).block();
             return true;
         }
         return false;
@@ -341,7 +341,7 @@ public class AudioTrackScheduler {
             long dur = this.gAM.getPlayer().getTrack().getInfo().getLength();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
             positionBasis = safeSeek;
-            this.gAM.getPlayer().setPosition(safeSeek);
+            this.gAM.getPlayer().setPosition(safeSeek).block();
             return true;
         }
         return false;
@@ -355,7 +355,7 @@ public class AudioTrackScheduler {
             long newPos = currPos + ms;
             long safePos = Math.min(Math.max(newPos, 0), dur-1);
             positionBasis = safePos;
-            this.gAM.getPlayer().setPosition(safePos);
+            this.gAM.getPlayer().setPosition(safePos).block();
             return true;
         }
         return false;
@@ -423,7 +423,7 @@ public class AudioTrackScheduler {
             }
 
             Filters filters = filterBuilder.setTimescale(newTimescale).build();
-            this.gAM.getPlayer().setFilters(filters);
+            this.gAM.getPlayer().setFilters(filters).block();
             return true;
         }
         return false;
@@ -441,7 +441,7 @@ public class AudioTrackScheduler {
             }
 
             Filters filters = filterBuilder.setTimescale(newTimescale).build();
-            this.gAM.getPlayer().setFilters(filters);
+            this.gAM.getPlayer().setFilters(filters).block();
             return true;
         }
         return false;

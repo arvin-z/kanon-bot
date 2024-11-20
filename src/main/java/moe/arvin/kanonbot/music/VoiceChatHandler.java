@@ -80,7 +80,7 @@ public class VoiceChatHandler {
             textChan.setActiveTextChannel(messageChannel);
             if (gAM.getPlayer().getPaused()) {
                 // resume
-                gAM.getPlayer().setPaused(false);
+                gAM.getPlayer().setPaused(false).block();
                 return false;
             } else if (!gAM.getScheduler().isPlaying()) {
                 // nothing playing
