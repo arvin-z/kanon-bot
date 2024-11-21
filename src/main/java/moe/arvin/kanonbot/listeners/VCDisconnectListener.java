@@ -2,12 +2,20 @@ package moe.arvin.kanonbot.listeners;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
+
 import moe.arvin.kanonbot.music.GuildAudioManager;
+import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
 public class VCDisconnectListener implements EventListener<VoiceStateUpdateEvent>  {
+
+    private final GuildAudioManagerFactory gAMFactory;
+
+    public VCDisconnectListener(GuildAudioManagerFactory gAMFactory) {
+        this.gAMFactory = gAMFactory;
+    }
 
     @Override
     public Class<VoiceStateUpdateEvent> getEventType() {
@@ -24,7 +32,7 @@ public class VCDisconnectListener implements EventListener<VoiceStateUpdateEvent
                 LOG.trace("{Guild ID: {}} Voice state update event: {}", guildID.asString(), event);
             }
             if (event.isLeaveEvent()) {
-                GuildAudioManager gAM = GuildAudioManager.of(guildID);
+                GuildAudioManager gAM = gAMFactory.get(guildID);
                 gAM.getScheduler().stop();
             }
         }

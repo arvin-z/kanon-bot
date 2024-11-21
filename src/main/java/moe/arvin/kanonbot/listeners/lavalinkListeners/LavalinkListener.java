@@ -1,13 +1,13 @@
-package moe.arvin.kanonbot.listeners;
+package moe.arvin.kanonbot.listeners.lavalinkListeners;
 
-import discord4j.core.event.domain.Event;
+import dev.arbjerg.lavalink.client.event.ClientEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-public interface EventListener<T extends Event> {
+public interface LavalinkListener<T extends ClientEvent> {
 
-    Logger LOG = LoggerFactory.getLogger(EventListener.class);
+    Logger LOG = LoggerFactory.getLogger(LavalinkListener.class);
 
     Class<T> getEventType();
     Mono<Void> execute(T event);

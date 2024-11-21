@@ -3,7 +3,7 @@ package moe.arvin.kanonbot.commands;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import moe.arvin.kanonbot.music.GuildAudioManager;
-import moe.arvin.kanonbot.music.TextChatHandler;
+import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -15,6 +15,12 @@ public class QueueCommand implements Command {
 
     @Value("${kanonbot.prefix}")
     private char cmdPrefix;
+
+    private final GuildAudioManagerFactory gAMFactory;
+
+    public QueueCommand(GuildAudioManagerFactory gAMFactory) {
+        this.gAMFactory = gAMFactory;
+    }
 
     @Override
     public String getName() {
@@ -32,7 +38,7 @@ public class QueueCommand implements Command {
         if (guildID.isEmpty()) {
             return Mono.empty();
         }
-        GuildAudioManager gAM = GuildAudioManager.of(guildID.get());
+        GuildAudioManager gAM = gAMFactory.get(guildID.get());
 
         int pageArg;
         try {

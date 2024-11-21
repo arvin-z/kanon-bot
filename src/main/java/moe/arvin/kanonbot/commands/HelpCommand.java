@@ -6,7 +6,6 @@ import discord4j.rest.util.Color;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 

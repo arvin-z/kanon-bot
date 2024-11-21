@@ -1,10 +1,7 @@
 package moe.arvin.kanonbot.music;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
+import dev.arbjerg.lavalink.client.player.Track;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -12,23 +9,20 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
-import discord4j.voice.VoiceConnection;
 import moe.arvin.kanonbot.util.URLUtil;
 
+import java.util.Optional;
 
 public class VoiceChatHandler {
 
-    private final AudioPlayerManager audioPlayerManager;
-    private boolean voiceChannelJoined;
     private final GuildAudioManager gAM;
-    private VoiceConnection connection;
+    private boolean voiceChannelJoined;
     private final TextChatHandler textChan;
 
-    public VoiceChatHandler(GuildAudioManager guildAudioManager, AudioPlayerManager audioPlayerManager) {
+    public VoiceChatHandler(GuildAudioManager guildAudioManager) {
         this.voiceChannelJoined = false;
         this.gAM = guildAudioManager;
         this.textChan = this.gAM.getTextChatHandler();
-        this.audioPlayerManager = audioPlayerManager;
     }
 
     public boolean userInVoiceChannelFromMsg(Message m) {
@@ -46,7 +40,7 @@ public class VoiceChatHandler {
 
     public boolean joinVoiceChannel(VoiceChannel vc) {
         if (vc != null) {
-            connection = vc.join().withProvider(gAM.getProvider()).withSelfDeaf(true).block();
+            vc.sendConnectVoiceState(false, true).subscribe();
             voiceChannelJoined = true;
             return true;
         } else {
@@ -54,35 +48,32 @@ public class VoiceChatHandler {
         }
     }
 
-    public void leaveVoiceChannel() {
+    public boolean leaveVoiceChannel(VoiceChannel vc) {
         gAM.getScheduler().stop();
-        if (connection != null && Boolean.TRUE.equals(connection.isConnected().block())) {
-            // pause player
-            connection.disconnect().block();
-            voiceChannelJoined = false;
-
+        if (vc != null) {
+            if (voiceChannelJoined) {
+                vc.sendDisconnectVoiceState().subscribe();
+                voiceChannelJoined = false;
+            }
+            return true;
+        } else {
+            return false;
         }
     }
-    
+
     public boolean handlePlay(Member mem, String trackArg, MessageChannel messageChannel) {
         // return value: true if output is handled, false if it isn't
         VoiceState vs = mem.getVoiceState().block();
         if (vs == null) {
-            TextChatHandler.sendErrorEmbedToMsgChannel(messageChannel,
-                    "You have to be connected to a voice channel before you can use this command!");
             return true;
         }
         VoiceChannel vc = vs.getChannel().block();
         if (vc == null) {
-            TextChatHandler.sendErrorEmbedToMsgChannel(messageChannel,
-                    "You have to be connected to a voice channel before you can use this command!");
             return true;
         }
 
         // connect to same VC
-        if (connection == null) {
-            joinVoiceChannel(vc);
-        } else if (!vc.getId().equals(connection.getChannelId().block())) {
+        if (!voiceChannelJoined) {
             joinVoiceChannel(vc);
         }
 
@@ -90,9 +81,14 @@ public class VoiceChatHandler {
             // command with no args
             // bind chat
             textChan.setActiveTextChannel(messageChannel);
-            if (gAM.getPlayer().isPaused()) {
+
+            Optional<LavalinkPlayer> cPlayer = gAM.getCachedPlayer();
+            if (cPlayer.isPresent() && cPlayer.get().getPaused()) {
                 // resume
-                gAM.getPlayer().setPaused(false);
+                gAM.getOrCreateLink()
+                        .getPlayer()
+                        .flatMap((player) -> player.setPaused(false))
+                        .subscribe();
                 return false;
             } else if (!gAM.getScheduler().isPlaying()) {
                 // nothing playing
@@ -110,52 +106,11 @@ public class VoiceChatHandler {
             trackArg = "ytsearch: " + trackArg;
         }
 
-        audioPlayerManager.loadItem(trackArg, new AudioLoadResultHandler() {
-            @Override
-            public void trackLoaded(AudioTrack audioTrack) {
-                textChan.setActiveTextChannel(messageChannel);
-                boolean nowPlaying = gAM.getScheduler().play(audioTrack, mem);
-                if (!nowPlaying) {
-                    textChan.sendEmbed(getQueuedEmbed(audioTrack, mem));
-                }
-            }
-
-            @Override
-            public void playlistLoaded(AudioPlaylist audioPlaylist) {
-                textChan.setActiveTextChannel(messageChannel);
-                if (audioPlaylist.getTracks().size()==1 || audioPlaylist.isSearchResult()) {
-                    AudioTrack selected = audioPlaylist.getSelectedTrack()==null ?
-                            audioPlaylist.getTracks().get(0) : audioPlaylist.getSelectedTrack();
-                    boolean nowPlaying = gAM.getScheduler().play(selected, mem);
-                    if (!nowPlaying) {
-                        textChan.sendEmbed(getQueuedEmbed(selected, mem));
-                    }
-                } else if (audioPlaylist.getSelectedTrack() != null) {
-                    boolean nowPlaying = gAM.getScheduler().play(audioPlaylist.getSelectedTrack(), mem);
-                    if (!nowPlaying) {
-                        textChan.sendEmbed(getQueuedEmbed(audioPlaylist.getSelectedTrack(), mem));
-                    }
-                } else {
-                    int trackCount = 0;
-                    for (AudioTrack audioTrack : audioPlaylist.getTracks()) {
-                        gAM.getScheduler().play(audioTrack, mem);
-                        trackCount++;
-                    }
-                    textChan.sendEmbed(getQueuedEmbed(trackCount));
-                }
-
-            }
-
-            @Override
-            public void noMatches() {
-
-            }
-
-            @Override
-            public void loadFailed(FriendlyException e) {
-                System.out.println("Something went wrong");
-            }
-        });
+        // load with trackArg
+        this.textChan.setActiveTextChannel(messageChannel);
+        this.gAM.getOrCreateLink()
+                .loadItem(trackArg)
+                .subscribe(new AudioLoader(this.gAM, this.textChan, mem));
         return true;
     }
 
@@ -164,17 +119,17 @@ public class VoiceChatHandler {
         return voiceChannelJoined;
     }
 
-    public EmbedCreateSpec getQueuedEmbed(AudioTrack track, Member mem) {
+    public static EmbedCreateSpec getQueuedEmbed(Track track, Member mem) {
         String memID = mem.getId().asString();
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.color(Color.MOON_YELLOW);
         builder.description("Queued [" +
-                AudioTrackScheduler.ellipsize(track.getInfo().title, 65, false) +
-                "](" + track.getInfo().uri + ") [<@" + memID + ">]");
+                AudioTrackScheduler.ellipsize(track.getInfo().getTitle(), 65, false) +
+                "](" + track.getInfo().getUri() + ") [<@" + memID + ">]");
         return builder.build();
     }
 
-    public EmbedCreateSpec getQueuedEmbed(int numTracks) {
+    public static EmbedCreateSpec getQueuedEmbed(int numTracks) {
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.color(Color.MOON_YELLOW);
         builder.description("Queued **" + numTracks + "** tracks");
@@ -182,7 +137,7 @@ public class VoiceChatHandler {
     }
 
     @SuppressWarnings("unused")
-    public EmbedCreateSpec getNoVCEmbed() {
+    public static EmbedCreateSpec getNoVCEmbed() {
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.color(Color.RED);
         builder.description("You have to be connected to a voice channel before you can use this command!");
