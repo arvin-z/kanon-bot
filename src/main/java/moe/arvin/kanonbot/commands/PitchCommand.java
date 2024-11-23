@@ -42,6 +42,11 @@ public class PitchCommand implements Command {
                     "You have to be connected to a voice channel before you can use this command!");
             return Mono.empty();
         }
+        if (msgArg == null || msgArg.isEmpty()) {
+            return message.getChannel()
+                    .flatMap(channel -> channel.createMessage(gAM.getScheduler().getPitchEmbed()))
+                    .then();
+        }
         double multiplier;
         try {
             multiplier = (double) Math.round(Double.parseDouble(msgArg) * 100) / 100;

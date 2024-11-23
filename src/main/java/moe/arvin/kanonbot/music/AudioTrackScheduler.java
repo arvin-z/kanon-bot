@@ -38,6 +38,9 @@ public class AudioTrackScheduler {
 
     private long positionBasis;
 
+    private double currentSpeed;
+    private double currentPitch;
+
     public AudioTrackScheduler(GuildAudioManager guildAudioManager, TextChatHandler txtChat) {
         this.gAM = guildAudioManager;
         nowPlayingIdx = -1;
@@ -46,6 +49,8 @@ public class AudioTrackScheduler {
         this.localLoopActive = false;
         this.localLoopTimer = new Timer();
         this.positionBasis = 0;
+        this.currentSpeed = 1.0;
+        this.currentPitch = 1.0;
     }
 
     public List<Track> getQueue() {
@@ -516,6 +521,8 @@ public class AudioTrackScheduler {
                     )
                     .subscribe();
 
+            this.currentSpeed = multiplier;
+
             return true;
         }
         return false;
@@ -548,9 +555,27 @@ public class AudioTrackScheduler {
                     )
                     .subscribe();
 
+            this.currentPitch = val;
+
             return true;
         }
         return false;
+    }
+
+    public EmbedCreateSpec getSpeedEmbed() {
+        EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+        return builder.color(Color.MOON_YELLOW)
+                .title("Speed")
+                .description(String.format("%.2f", this.currentSpeed) + "x")
+                .build();
+    }
+
+    public EmbedCreateSpec getPitchEmbed() {
+        EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
+        return builder.color(Color.MOON_YELLOW)
+                .title("Pitch")
+                .description(String.format("%.2f", this.currentPitch) + "x")
+                .build();
     }
 
     public void onTrackStart(Track track) {
