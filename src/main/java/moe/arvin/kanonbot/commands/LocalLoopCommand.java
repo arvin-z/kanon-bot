@@ -59,9 +59,13 @@ public class LocalLoopCommand implements Command {
                 String[] times = msgArg.split(" ");
                 beginT = Integer.parseInt(times[0]);
                 endT = Integer.parseInt(times[1]);
-            } catch (NumberFormatException e) {
+            } catch (Exception e) {
                 TextChatHandler.sendErrorEmbedToMsgChannel(message,
                         "You must give 2 valid times in seconds!");
+                return Mono.empty();
+            }
+            if (endT <= beginT) {
+                TextChatHandler.sendErrorEmbedToMsgChannel(message, "Start time must be before end time!");
                 return Mono.empty();
             }
             boolean res = gAM.getScheduler().localLoop(beginT, endT);
