@@ -282,7 +282,6 @@ public class AudioTrackScheduler {
         if (!queue.isEmpty()) {
             this.gAM.getCachedPlayer().ifPresent(
                     (player) -> player.setTrack(null)
-                            .doFinally(unused -> nowPlayingIdx = -1)
                             .subscribe()
             );
             return true;
@@ -445,8 +444,8 @@ public class AudioTrackScheduler {
         return false;
     }
 
-    public boolean skip() {
-        if (!queue.isEmpty()) {
+    public boolean skip(boolean afterEnded) {
+        if (!queue.isEmpty() && nowPlayingIdx != -1) {
             if (nowPlayingIdx < queue.size()-1 && nowPlayingIdx >= 0) {
                 if (play(queue.get(nowPlayingIdx+1), true, false)) {
                     nowPlayingIdx++;
@@ -458,6 +457,9 @@ public class AudioTrackScheduler {
                     playFromStart();
                 } else {
                     stop();
+                    if (afterEnded) {
+                        nowPlayingIdx = -1;
+                    }
                 }
                 return true;
             }
@@ -613,8 +615,10 @@ public class AudioTrackScheduler {
             if (loopState == 1) {
                 repeatPrev();
             } else {
-                skip();
+                skip(true);
             }
+        } else {
+            nowPlayingIdx = -1;
         }
     }
 
