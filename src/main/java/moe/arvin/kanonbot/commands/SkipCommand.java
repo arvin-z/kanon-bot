@@ -42,7 +42,7 @@ public class SkipCommand implements Command {
                     "You have to be connected to a voice channel before you can use this command!");
             return Mono.empty();
         }
-        boolean skipped = gAM.getScheduler().skip(false);
+        boolean skipped = gAM.getScheduler().skip();
         if (skipped) {
             return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C"))
                     .then();

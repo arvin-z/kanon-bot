@@ -34,6 +34,7 @@ public class VCDisconnectListener implements EventListener<VoiceStateUpdateEvent
             if (event.isLeaveEvent()) {
                 GuildAudioManager gAM = gAMFactory.get(guildID);
                 gAM.getScheduler().stop();
+                gAM.getVoiceChatHandler().setVoiceChannelJoined(false);
             }
         }
         // LISTEN FOR other users disconnecting

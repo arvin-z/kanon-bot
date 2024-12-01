@@ -41,6 +41,9 @@ public class AudioTrackScheduler {
     private double currentSpeed;
     private double currentPitch;
 
+    private boolean isTransitioning;
+    private int targetIndex; // Add this to track intended index during transitions
+
     public AudioTrackScheduler(GuildAudioManager guildAudioManager, TextChatHandler txtChat) {
         this.gAM = guildAudioManager;
         nowPlayingIdx = -1;
@@ -51,6 +54,8 @@ public class AudioTrackScheduler {
         this.positionBasis = 0;
         this.currentSpeed = 1.0;
         this.currentPitch = 1.0;
+        this.isTransitioning = false;
+        this.targetIndex = -1;
     }
 
     public List<Track> getQueue() {
@@ -223,10 +228,8 @@ public class AudioTrackScheduler {
             if (nowPlayingIdx >= 0) {
                 queue.set(nowPlayingIdx, queue.get(nowPlayingIdx).makeClone());
             }
-            if (play(queue.get(0), true, false)) {
-                nowPlayingIdx = 0;
-                return true;
-            }
+            targetIndex = 0;
+            return play(queue.get(0), true, false);
         }
         return false;
     }
@@ -242,20 +245,20 @@ public class AudioTrackScheduler {
     public boolean play(final Track track, final boolean force, final boolean addToQueue) {
         if (addToQueue) {
             queue.add(track);
+            if (queue.size() == 1) {
+                targetIndex = 0;
+            } else if (nowPlayingIdx == -1) {
+                targetIndex = queue.size() - 1;
+            }
         }
-        if (queue.size() == 1) {
-            this.nowPlayingIdx = 0;
-        } else if (nowPlayingIdx == -1) {
-            nowPlayingIdx = queue.size() - 1;
-        }
+
         AtomicBoolean isPlaying = new AtomicBoolean(false);
         this.gAM.getCachedPlayer().ifPresentOrElse(
                 (player) -> {
-                    // check if queuing
                     if (player.getTrack() == null || force) {
                         isPlaying.set(true);
+                        isTransitioning = true;
                     }
-                    // start track
                     this.gAM.getCachedLink().ifPresent(
                             (link) -> link.createOrUpdatePlayer()
                                     .setTrack(track)
@@ -264,7 +267,7 @@ public class AudioTrackScheduler {
                     );
                 },
                 () -> {
-                    // start track
+                    isTransitioning = true;
                     this.gAM.getCachedLink().ifPresent(
                             (link) -> link.createOrUpdatePlayer()
                                     .setTrack(track)
@@ -276,6 +279,7 @@ public class AudioTrackScheduler {
 
         return isPlaying.get();
     }
+
 
     @SuppressWarnings("UnusedReturnValue")
     public boolean stop() {
@@ -295,15 +299,13 @@ public class AudioTrackScheduler {
     }
 
     public boolean jump(int trackNum) {
-        int i = trackNum-1;
+        int i = trackNum - 1;
         if (i < queue.size() && i >= 0) {
+            targetIndex = i;
             if (nowPlayingIdx >= 0) {
                 queue.set(nowPlayingIdx, queue.get(nowPlayingIdx).makeClone());
             }
-            if (play(queue.get(i), true, false)) {
-                nowPlayingIdx = i;
-                return true;
-            }
+            return play(queue.get(i), true, false);
         }
         return false;
     }
@@ -324,21 +326,42 @@ public class AudioTrackScheduler {
     }
 
     public boolean remove(int trackNum) {
-        int i = trackNum-1;
+        int i = trackNum - 1;
         if (i >= queue.size() || i < 0) {
             return false;
         }
+
         if (i > nowPlayingIdx) {
+            // Removing a track after the current one - just remove it
             queue.remove(i);
         } else if (i < nowPlayingIdx) {
+            // Removing a track before the current one
             queue.remove(i);
-            nowPlayingIdx--;
+            // Need to trigger a track restart to update the index
+            targetIndex = nowPlayingIdx - 1;
+            Track currentTrack = queue.get(targetIndex);
+            play(currentTrack, true, false);
         } else {
+            // Removing the currently playing track
             queue.remove(i);
-            if (queue.isEmpty() || nowPlayingIdx >= queue.size() - 1) {
+            if (queue.isEmpty()) {
                 stop();
+                targetIndex = -1;
+                // nowPlayingIdx will be set to -1 in onTrackEnd
+            } else if (i >= queue.size()) {
+                // Was last track, move to start if looping
+                if (loopState == 2) {
+                    targetIndex = 0;
+                    playFromStart();
+                } else {
+                    stop();
+                    targetIndex = -1;
+                    // nowPlayingIdx will be set to -1 in onTrackEnd
+                }
             } else {
-                play(queue.get(nowPlayingIdx), true, false);
+                // Play next track in queue
+                targetIndex = i; // Keep same index since we removed current
+                play(queue.get(i), true, false);
             }
         }
         return true;
@@ -444,24 +467,23 @@ public class AudioTrackScheduler {
         return false;
     }
 
-    public boolean skip(boolean afterEnded) {
+    public boolean skip() {
         if (!queue.isEmpty() && nowPlayingIdx != -1) {
-            if (nowPlayingIdx < queue.size()-1 && nowPlayingIdx >= 0) {
-                if (play(queue.get(nowPlayingIdx+1), true, false)) {
-                    nowPlayingIdx++;
-                    return true;
-                }
-            } else if (nowPlayingIdx >= queue.size()-1) {
+            if (nowPlayingIdx < queue.size() - 1 && nowPlayingIdx >= 0) {
+                isTransitioning = true;
+                targetIndex = nowPlayingIdx + 1;
+                return play(queue.get(nowPlayingIdx + 1), true, false);
+            } else if (nowPlayingIdx >= queue.size() - 1) {
                 if (loopState == 2) {
-                    nowPlayingIdx = 0;
-                    playFromStart();
+                    isTransitioning = true;
+                    targetIndex = 0;
+                    return playFromStart();
                 } else {
                     stop();
-                    if (afterEnded) {
-                        nowPlayingIdx = -1;
-                    }
+                    nowPlayingIdx = -1;
+                    targetIndex = -1;
+                    return true;
                 }
-                return true;
             }
         }
         return false;
@@ -478,15 +500,15 @@ public class AudioTrackScheduler {
     public boolean back() {
         if (!queue.isEmpty()) {
             if (nowPlayingIdx < queue.size() && nowPlayingIdx > 0) {
-                if (play(queue.get(nowPlayingIdx-1), true, false)) {
-                    nowPlayingIdx--;
-                    return true;
-                }
+                targetIndex = nowPlayingIdx - 1;
+                return play(queue.get(targetIndex), true, false);
             } else if (nowPlayingIdx < queue.size() && nowPlayingIdx == 0) {
-                Track cloneTrack = queue.get(nowPlayingIdx).makeClone();
+                // At first track - replay it
+                targetIndex = 0;
+                Track cloneTrack = queue.get(0).makeClone();
                 boolean played = play(cloneTrack, true, false);
                 if (played) {
-                    queue.set(nowPlayingIdx, cloneTrack);
+                    queue.set(0, cloneTrack);
                     return true;
                 }
             }
@@ -582,6 +604,14 @@ public class AudioTrackScheduler {
 
     public void onTrackStart(Track track) {
         positionBasis = 0;
+
+        // Update nowPlayingIdx based on the transition state
+        if (isTransitioning && targetIndex >= 0) {
+            nowPlayingIdx = targetIndex;
+            isTransitioning = false;
+            targetIndex = -1;
+        }
+
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.title("Now playing");
 
@@ -607,18 +637,39 @@ public class AudioTrackScheduler {
             localLoopTimer = new Timer();
             localLoopActive = false;
         }
-        queue.set(nowPlayingIdx, lastTrack.makeClone());
+
+        // Use lastTrack instead of currentTrack
+        if (lastTrack != null && nowPlayingIdx >= 0 && nowPlayingIdx < queue.size()) {
+            queue.set(nowPlayingIdx, lastTrack.makeClone());
+        }
+
         if (this.playStartMsg != null) {
             playStartMsg.delete().share().block();
         }
-        if (endReason.getMayStartNext()) {
-            if (loopState == 1) {
-                repeatPrev();
+
+        if (!isTransitioning) {
+            if (endReason.getMayStartNext()) {
+                isTransitioning = true;
+                if (loopState == 1) {
+                    targetIndex = nowPlayingIdx;
+                    repeatPrev();
+                } else if (nowPlayingIdx < queue.size() - 1) {
+                    targetIndex = nowPlayingIdx + 1;
+                    skip();
+                } else if (loopState == 2) {
+                    targetIndex = 0;
+                    playFromStart();
+                } else {
+                    // Remove currentTrack = null since we don't have that field anymore
+                    nowPlayingIdx = -1;
+                    targetIndex = -1;
+                    stop();
+                }
             } else {
-                skip(true);
+                // Remove currentTrack = null since we don't have that field anymore
+                nowPlayingIdx = -1;
+                targetIndex = -1;
             }
-        } else {
-            nowPlayingIdx = -1;
         }
     }
 

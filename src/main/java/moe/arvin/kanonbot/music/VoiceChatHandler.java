@@ -61,6 +61,10 @@ public class VoiceChatHandler {
         }
     }
 
+    public void setVoiceChannelJoined(boolean joined) {
+        this.voiceChannelJoined = joined;
+    }
+
     public boolean handlePlay(Member mem, String trackArg, MessageChannel messageChannel) {
         // return value: true if output is handled, false if it isn't
         VoiceState vs = mem.getVoiceState().block();
