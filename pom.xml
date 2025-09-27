@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.1</version>
+        <version>3.3.13</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>moe.arvin</groupId>
     <artifactId>KanonBot</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <name>KanonBot</name>
     <description>KanonBot</description>
     <properties>
@@ -59,13 +59,13 @@
         <dependency>
             <groupId>com.discord4j</groupId>
             <artifactId>discord4j-core</artifactId>
-            <version>3.2.7</version>
+            <version>3.2.9</version>
         </dependency>
 
         <dependency>
             <groupId>dev.arbjerg</groupId>
             <artifactId>lavalink-client</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.0</version>
         </dependency>
 
 
