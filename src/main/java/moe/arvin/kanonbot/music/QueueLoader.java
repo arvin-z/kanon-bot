@@ -1,9 +1,13 @@
 package moe.arvin.kanonbot.music;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.arbjerg.lavalink.client.LavalinkClient;
+import dev.arbjerg.lavalink.client.player.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Member;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +26,8 @@ public class QueueLoader implements CommandLineRunner {
     private final GuildAudioManagerFactory gAMFactory;
     private final QueuePersistenceService queuePersistenceService;
     private final LavalinkClient lavalinkClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     public QueueLoader(GatewayDiscordClient discordClient, GuildAudioManagerFactory gAMFactory, QueuePersistenceService queuePersistenceService, LavalinkClient lavalinkClient) {
         this.discordClient = discordClient;
@@ -54,18 +60,58 @@ public class QueueLoader implements CommandLineRunner {
 
     private Mono<Void> loadGuildQueue(long guildId) {
         log.info("Re-loading queue for guild: {}", guildId);
-        List<String> urls = queuePersistenceService.loadQueue(guildId);
-        if (urls.isEmpty()) {
+        List<TrackData> trackDataList = queuePersistenceService.loadQueue(guildId);
+        if (trackDataList.isEmpty()) {
             return Mono.empty();
         }
 
         GuildAudioManager gAM = gAMFactory.get(Snowflake.of(guildId));
-        AudioLoader audioLoader = new AudioLoader(gAM, gAM.getTextChatHandler(), null);
+        AudioTrackScheduler scheduler = gAM.getScheduler();
 
-        return Flux.fromIterable(urls)
-                .flatMap(url -> lavalinkClient.getOrCreateLink(guildId).loadItem(url))
-                .doOnNext(audioLoader) // Use the AudioLoader as a consumer for each loaded item
+        return Flux.fromIterable(trackDataList)
+                .flatMap(trackData -> loadAndPrepareTrack(guildId, trackData))
+                .doOnNext(scheduler::queue)
                 .then();
+    }
+
+    private Mono<Track> loadAndPrepareTrack(long guildId, TrackData trackData) {
+        return lavalinkClient.getOrCreateLink(guildId)
+                .loadItem(trackData.url())
+                .flatMap(loadResult -> {
+                    Track track = null;
+                    if (loadResult instanceof TrackLoaded loaded) {
+                        track = loaded.getTrack();
+                    } else if (loadResult instanceof SearchResult result) {
+                        List<Track> tracks = result.getTracks();
+                        if (!tracks.isEmpty()) {
+                            track = tracks.get(0);
+                        }
+                    }
+
+                    if (track == null) {
+                        return Mono.empty();
+                    }
+
+                    final Track finalTrack = track;
+                    return getMember(guildId, trackData.memberId())
+                            .map(member -> {
+                                ObjectNode userData = objectMapper.createObjectNode();
+                                userData.put("userId", member.getId().asString());
+                                finalTrack.setUserData(userData);
+                                return finalTrack;
+                            })
+                            .defaultIfEmpty(finalTrack); // If member not found, use track without user data
+                });
+    }
+
+
+    private Mono<Member> getMember(long guildId, String userId) {
+        if (userId == null || "Unknown".equals(userId)) {
+            return Mono.empty();
+        }
+        return discordClient.getGuildById(Snowflake.of(guildId))
+                .flatMap(guild -> guild.getMemberById(Snowflake.of(userId)))
+                .onErrorResume(e -> Mono.empty()); // If member fetch fails, continue without it
     }
 
     private Mono<Boolean> isBotInGuild(long guildId) {

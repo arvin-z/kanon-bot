@@ -106,12 +106,9 @@ public class VoiceChatHandler {
                 return true;
             }
         }
-        if (!URLUtil.isValidURL(trackArg, new String[]{"http", "https"})) {
-            if (trackArg.startsWith("deez:")) {
-                trackArg = trackArg.replaceFirst("deez:", "dzsearch:");
-            } else if (!trackArg.startsWith("ytsearch:") && !trackArg.startsWith("dzsearch:")) {
-                trackArg = "ytsearch:" + trackArg;
-            }
+        String[] URLPrefixes = {"http", "https"};
+        if ((!URLUtil.isValidURL(trackArg, URLPrefixes)) && (!trackArg.startsWith("ytsearch:"))) {
+            trackArg = "dzsearch: " + trackArg;
         }
 
         // load with trackArg

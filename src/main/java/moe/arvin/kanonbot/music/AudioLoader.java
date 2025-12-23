@@ -1,18 +1,20 @@
 package moe.arvin.kanonbot.music;
 
 import dev.arbjerg.lavalink.client.AbstractAudioLoadResultHandler;
-import dev.arbjerg.lavalink.client.player.*;
+import dev.arbjerg.lavalink.client.player.PlaylistLoaded;
+import dev.arbjerg.lavalink.client.player.SearchResult;
+import dev.arbjerg.lavalink.client.player.Track;
+import dev.arbjerg.lavalink.client.player.TrackLoaded;
 import discord4j.core.object.entity.Member;
-import discord4j.core.spec.EmbedCreateSpec;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AudioLoader extends AbstractAudioLoadResultHandler {
     private final GuildAudioManager gAM;
-    Logger LOG = LoggerFactory.getLogger(AudioLoader.class);
-    TextChatHandler textChan;
-    Member mem;
+    private final Logger LOG = LoggerFactory.getLogger(AudioLoader.class);
+    private final TextChatHandler textChan;
+    private final Member mem;
 
     public AudioLoader(GuildAudioManager gAM, TextChatHandler textChan, Member mem) {
         this.gAM = gAM;
@@ -38,16 +40,10 @@ public class AudioLoader extends AbstractAudioLoadResultHandler {
         } else {
             int trackCount = 0;
             for (Track track : playlistLoaded.getTracks()) {
-                if (mem == null) {
-                    gAM.getScheduler().queue(track);
-                } else {
-                    gAM.getScheduler().play(track, mem);
-                }
+                gAM.getScheduler().play(track, mem);
                 trackCount++;
             }
-            if (mem != null) {
-                textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(trackCount));
-            }
+            textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(trackCount));
         }
     }
 
@@ -61,18 +57,9 @@ public class AudioLoader extends AbstractAudioLoadResultHandler {
     }
 
     private void handleTrack(Track track) {
-        if (mem == null) {
-            // Preload case, just add to the queue without playing
-            gAM.getScheduler().queue(track);
-        } else {
-            // User command case, play immediately or add to the queue
-            boolean nowPlaying = gAM.getScheduler().play(track, mem);
-            if (!nowPlaying) {
-                EmbedCreateSpec embed = VoiceChatHandler.getQueuedEmbed(track);
-                if (embed != null) {
-                    textChan.sendEmbed(embed);
-                }
-            }
+        boolean nowPlaying = gAM.getScheduler().play(track, mem);
+        if (!nowPlaying) {
+            textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(track, mem));
         }
     }
 
@@ -82,7 +69,7 @@ public class AudioLoader extends AbstractAudioLoadResultHandler {
     }
 
     @Override
-    public void loadFailed(@NotNull LoadFailed loadFailed) {
+    public void loadFailed(@NotNull dev.arbjerg.lavalink.client.player.LoadFailed loadFailed) {
         LOG.info("Failed to load track(s): {}", loadFailed.getException().getMessage());
     }
 }

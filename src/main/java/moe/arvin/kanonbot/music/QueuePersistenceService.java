@@ -1,5 +1,6 @@
 package moe.arvin.kanonbot.music;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
@@ -29,31 +30,31 @@ public class QueuePersistenceService {
         }
     }
 
-    public void saveQueue(long guildId, List<String> urls) {
-        if (urls.isEmpty()) {
+    public void saveQueue(long guildId, List<TrackData> tracks) {
+        if (tracks.isEmpty()) {
             deleteQueue(guildId);
             return;
         }
 
         Path queueFile = QUEUE_DIR.resolve(guildId + ".json");
         try {
-            objectMapper.writeValue(queueFile.toFile(), urls);
-            log.debug("Saved queue for guild {} ({} tracks)", guildId, urls.size());
+            objectMapper.writeValue(queueFile.toFile(), tracks);
+            log.debug("Saved queue for guild {} ({} tracks)", guildId, tracks.size());
         } catch (IOException e) {
             log.error("Failed to save queue for guild {}", guildId, e);
         }
     }
 
-    public List<String> loadQueue(long guildId) {
+    public List<TrackData> loadQueue(long guildId) {
         Path queueFile = QUEUE_DIR.resolve(guildId + ".json");
         if (!Files.exists(queueFile)) {
             return new ArrayList<>();
         }
 
         try {
-            String[] urls = objectMapper.readValue(queueFile.toFile(), String[].class);
-            log.info("Loaded {} track URLs for guild {}", urls.length, guildId);
-            return List.of(urls);
+            List<TrackData> tracks = objectMapper.readValue(queueFile.toFile(), new TypeReference<>() {});
+            log.info("Loaded {} track data for guild {}", tracks.size(), guildId);
+            return tracks;
         } catch (IOException e) {
             log.error("Failed to load queue for guild {}", guildId, e);
             return new ArrayList<>();

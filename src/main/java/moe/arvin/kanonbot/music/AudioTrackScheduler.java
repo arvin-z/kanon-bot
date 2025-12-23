@@ -63,10 +63,18 @@ public class AudioTrackScheduler {
 
     private void persistQueue() {
         if (queuePersistenceService != null) {
-            List<String> urls = queue.stream()
-                    .map(track -> track.getInfo().getUri())
+            List<TrackData> trackData = queue.stream()
+                    .map(track -> {
+                        String url = track.getInfo().getUri();
+                        String memberId = "Unknown";
+                        JsonNode userData = track.getUserData();
+                        if (userData.has("userId")) {
+                            memberId = userData.get("userId").asText();
+                        }
+                        return new TrackData(url, memberId);
+                    })
                     .collect(Collectors.toList());
-            queuePersistenceService.saveQueue(gAM.getGuildId(), urls);
+            queuePersistenceService.saveQueue(gAM.getGuildId(), trackData);
         }
     }
 
