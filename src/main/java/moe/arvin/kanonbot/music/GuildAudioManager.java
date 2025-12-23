@@ -16,7 +16,7 @@ public final class GuildAudioManager {
     private final VoiceChatHandler voiceChatHandler;
     private final AudioTrackScheduler scheduler;
 
-    public GuildAudioManager(LavalinkClient lavalinkClient, long guildId) {
+    public GuildAudioManager(LavalinkClient lavalinkClient, long guildId, QueuePersistenceService queuePersistenceService) {
         this.lavalinkClient = lavalinkClient;
         this.guildId = guildId;
 
@@ -24,7 +24,11 @@ public final class GuildAudioManager {
 
         textChatHandler = new TextChatHandler();
         voiceChatHandler = new VoiceChatHandler(this);
-        scheduler = new AudioTrackScheduler(this, this.textChatHandler);
+        scheduler = new AudioTrackScheduler(this, this.textChatHandler, queuePersistenceService);
+    }
+
+    public long getGuildId() {
+        return guildId;
     }
 
     public Link getOrCreateLink() {

@@ -24,7 +24,7 @@ public class AudioLoader extends AbstractAudioLoadResultHandler {
         final Track track = trackLoaded.getTrack();
 
         boolean nowPlaying = gAM.getScheduler().play(track, mem);
-        if (!nowPlaying) {
+        if (!nowPlaying && mem != null) {
             textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(track, mem));
         }
     }
@@ -35,7 +35,7 @@ public class AudioLoader extends AbstractAudioLoadResultHandler {
         if (playlistLoaded.getTracks().size()==1) {
             Track selected = playlistLoaded.getTracks().get(0);
             boolean nowPlaying = gAM.getScheduler().play(selected, mem);
-            if (!nowPlaying) {
+            if (!nowPlaying && mem != null) {
                 textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(selected, mem));
             }
         } else {
@@ -44,16 +44,22 @@ public class AudioLoader extends AbstractAudioLoadResultHandler {
                 gAM.getScheduler().play(track, mem);
                 trackCount++;
             }
-            textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(trackCount));
+            if (mem != null) {
+                textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(trackCount));
+            }
         }
 
     }
 
     @Override
     public void onSearchResultLoaded(@NotNull SearchResult searchResult) {
+        if (searchResult.getTracks().isEmpty()) {
+            noMatches();
+            return;
+        }
         Track selected = searchResult.getTracks().get(0);
         boolean nowPlaying = gAM.getScheduler().play(selected, mem);
-        if (!nowPlaying) {
+        if (!nowPlaying && mem != null) {
             textChan.sendEmbed(VoiceChatHandler.getQueuedEmbed(selected, mem));
         }
     }

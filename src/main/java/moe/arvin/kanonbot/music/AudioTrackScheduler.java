@@ -19,11 +19,13 @@ import discord4j.rest.util.Color;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class AudioTrackScheduler {
 
     private final GuildAudioManager gAM;
     private final List<Track> queue;
+    private final QueuePersistenceService queuePersistenceService;
 
     private int nowPlayingIdx;
 
@@ -44,8 +46,9 @@ public class AudioTrackScheduler {
     private boolean isTransitioning;
     private int targetIndex; // Add this to track intended index during transitions
 
-    public AudioTrackScheduler(GuildAudioManager guildAudioManager, TextChatHandler txtChat) {
+    public AudioTrackScheduler(GuildAudioManager guildAudioManager, TextChatHandler txtChat, QueuePersistenceService queuePersistenceService) {
         this.gAM = guildAudioManager;
+        this.queuePersistenceService = queuePersistenceService;
         nowPlayingIdx = -1;
         queue = Collections.synchronizedList(new ArrayList<>());
         this.textChat = txtChat;
@@ -56,6 +59,15 @@ public class AudioTrackScheduler {
         this.currentPitch = 1.0;
         this.isTransitioning = false;
         this.targetIndex = -1;
+    }
+
+    private void persistQueue() {
+        if (queuePersistenceService != null) {
+            List<String> urls = queue.stream()
+                    .map(track -> track.getInfo().getUri())
+                    .collect(Collectors.toList());
+            queuePersistenceService.saveQueue(gAM.getGuildId(), urls);
+        }
     }
 
     public List<Track> getQueue() {
@@ -70,6 +82,7 @@ public class AudioTrackScheduler {
             Collections.shuffle(queue);
             nowPlayingIdx = queue.indexOf(curr);
         }
+        persistQueue();
     }
 
     public String queueToString(int pageNum, char cmdPrefix) {
@@ -250,6 +263,7 @@ public class AudioTrackScheduler {
             } else if (nowPlayingIdx == -1) {
                 targetIndex = queue.size() - 1;
             }
+            persistQueue();
         }
 
         AtomicBoolean isPlaying = new AtomicBoolean(false);
@@ -296,6 +310,7 @@ public class AudioTrackScheduler {
     public void clear() {
         stop();
         queue.clear();
+        persistQueue();
     }
 
     public boolean jump(int trackNum) {
@@ -364,6 +379,7 @@ public class AudioTrackScheduler {
                 play(queue.get(i), true, false);
             }
         }
+        persistQueue();
         return true;
     }
 
