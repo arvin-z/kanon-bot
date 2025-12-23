@@ -6,7 +6,7 @@ import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.entity.channel.VoiceChannel;
+import discord4j.core.object.entity.channel.AudioChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 import moe.arvin.kanonbot.util.URLUtil;
@@ -34,11 +34,11 @@ public class VoiceChatHandler {
         if (vs == null) {
             return false;
         }
-        VoiceChannel vc = vs.getChannel().block();
+        AudioChannel vc = vs.getChannel().block();
         return vc != null;
     }
 
-    public boolean joinVoiceChannel(VoiceChannel vc) {
+    public boolean joinVoiceChannel(AudioChannel vc) {
         if (vc != null) {
             vc.sendConnectVoiceState(false, true).subscribe();
             voiceChannelJoined = true;
@@ -48,7 +48,7 @@ public class VoiceChatHandler {
         }
     }
 
-    public boolean leaveVoiceChannel(VoiceChannel vc) {
+    public boolean leaveVoiceChannel(AudioChannel vc) {
         gAM.getScheduler().stop();
         if (vc != null) {
             if (voiceChannelJoined) {
@@ -66,17 +66,17 @@ public class VoiceChatHandler {
     }
 
     public boolean handlePlay(Member mem, String trackArg, MessageChannel messageChannel) {
-        // return value: true if output is handled, false if it isn't
+        // return value: true if the output is handled, false if it isn't
         VoiceState vs = mem.getVoiceState().block();
         if (vs == null) {
             return true;
         }
-        VoiceChannel vc = vs.getChannel().block();
+        AudioChannel vc = vs.getChannel().block();
         if (vc == null) {
             return true;
         }
 
-        // connect to same VC
+        // connect to the same VC
         if (!voiceChannelJoined) {
             joinVoiceChannel(vc);
         }

@@ -4,7 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
@@ -49,13 +49,14 @@ public class DCCommand implements Command{
         return msg.getAuthorAsMember()
                 .flatMap(Member::getVoiceState)
                 .flatMap(VoiceState::getChannel)
-                .doOnSuccess(voiceChannel -> {
+                .flatMap(voiceChannel -> {
                     if (vcHandler.leaveVoiceChannel(voiceChannel)) {
-                        TextChatHandler.reactToMessage(msg, ReactionEmoji.unicode("\uD83D\uDC4B"));
+                        TextChatHandler.reactToMessage(msg, Emoji.unicode("\uD83D\uDC4B"));
                     } else {
                         TextChatHandler.sendErrorEmbedToMsgChannel(msg,
                                 "You have to be connected to the voice channel before you can use this command!");
                     }
+                    return Mono.empty();
                 })
                 .then();
     }

@@ -2,7 +2,7 @@ package moe.arvin.kanonbot.music;
 
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 
@@ -23,15 +23,11 @@ public class TextChatHandler {
         return activeTextChannel;
     }
 
-    public void sendMsg(String s) {
-        activeTextChannel.createMessage(s).block();
-    }
-
     public void sendEmbed(EmbedCreateSpec s) {
         activeTextChannel.createMessage(s).block();
     }
 
-    public static void reactToMessage(Message m, ReactionEmoji e) {
+    public static void reactToMessage(Message m, Emoji e) {
         m.addReaction(e).block();
     }
 

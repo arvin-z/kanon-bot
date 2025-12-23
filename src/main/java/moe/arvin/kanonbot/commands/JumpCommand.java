@@ -2,7 +2,7 @@ package moe.arvin.kanonbot.commands;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
@@ -48,7 +48,7 @@ public class JumpCommand implements Command {
         } catch (NumberFormatException e) {
             boolean jumpedTitle = gAM.getScheduler().jumpTitle(msgArg);
             if (jumpedTitle) {
-                return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C"))
+                return message.addReaction(Emoji.unicode("\uD83D\uDC4C"))
                         .then();
             } else {
                 TextChatHandler.sendErrorEmbedToMsgChannel(message, "No matching track found in queue!");
@@ -57,7 +57,7 @@ public class JumpCommand implements Command {
         }
         boolean jumped = gAM.getScheduler().jump(trackNum);
         if (jumped) {
-            return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C"))
+            return message.addReaction(Emoji.unicode("\uD83D\uDC4C"))
                     .then();
         } else {
             TextChatHandler.sendErrorEmbedToMsgChannel(message, "That track number is not valid!");

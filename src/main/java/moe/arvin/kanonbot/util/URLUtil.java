@@ -1,13 +1,19 @@
 package moe.arvin.kanonbot.util;
 
-import org.springframework.web.util.UriComponentsBuilder;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class URLUtil {
 
     public static boolean isValidURL(String url, String[] allowedSchemes) {
+        if (url == null || url.isBlank()) {
+            return false;
+        }
+
         try {
-            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url);
-            String scheme = builder.build().getScheme();
+            // java.net.URI parses the string and throws URISyntaxException if invalid
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
 
             if (scheme == null) {
                 return false;
@@ -18,10 +24,9 @@ public class URLUtil {
                     return true;
                 }
             }
-        } catch (Exception e) {
+        } catch (URISyntaxException e) {
             return false;
         }
         return false;
     }
-
 }

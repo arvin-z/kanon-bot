@@ -2,7 +2,7 @@ package moe.arvin.kanonbot.commands;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
@@ -44,7 +44,7 @@ public class BackCommand implements Command {
         }
         boolean backed = gAM.getScheduler().back();
         if (backed) {
-            return message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C"))
+            return message.addReaction(Emoji.unicode("\uD83D\uDC4C"))
                     .then();
         } else {
             TextChatHandler.sendErrorEmbedToMsgChannel(message, "You must be playing a track to use this command!");

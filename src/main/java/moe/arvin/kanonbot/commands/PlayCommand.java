@@ -3,7 +3,7 @@ package moe.arvin.kanonbot.commands;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.VoiceChatHandler;
@@ -41,9 +41,11 @@ public class PlayCommand implements Command {
         final VoiceChatHandler vcHandler = gAM.getVoiceChatHandler();
         MessageChannel chan = getChannel(message);
         return message.getAuthorAsMember()
-                .doOnSuccess(member -> {
-                    if (!vcHandler.handlePlay(member, msgArg, chan))
+                .flatMap(member -> {
+                    if (!vcHandler.handlePlay(member, msgArg, chan)) {
                         addMsgReaction(message);
+                    }
+                    return Mono.empty();
                 })
                 .then();
     }
@@ -53,6 +55,6 @@ public class PlayCommand implements Command {
     }
 
     public void addMsgReaction(Message message) {
-        message.addReaction(ReactionEmoji.unicode("\uD83D\uDC4C")).block();
+        message.addReaction(Emoji.unicode("\uD83D\uDC4C")).block();
     }
 }

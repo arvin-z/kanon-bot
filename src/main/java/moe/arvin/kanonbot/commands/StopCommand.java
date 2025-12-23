@@ -2,7 +2,7 @@ package moe.arvin.kanonbot.commands;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.core.object.emoji.Emoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
@@ -43,7 +43,7 @@ public class StopCommand implements Command {
             return Mono.empty();
         }
         gAM.getScheduler().stop();
-        return message.addReaction(ReactionEmoji.unicode("\uD83D\uDED1"))
+        return message.addReaction(Emoji.unicode("\uD83D\uDED1"))
                 .then();
     }
 }
