@@ -106,8 +106,8 @@ public class VoiceChatHandler {
             }
         }
         String[] URLPrefixes = {"http", "https"};
-        if (!URLUtil.isValidURL(trackArg, URLPrefixes)) {
-            trackArg = "ytsearch: " + trackArg;
+        if ((!URLUtil.isValidURL(trackArg, URLPrefixes)) && (!trackArg.startsWith("ytsearch:"))) {
+            trackArg = "dzsearch: " + trackArg;
         }
 
         // load with trackArg
