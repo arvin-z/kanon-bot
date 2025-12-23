@@ -10,7 +10,7 @@
     </parent>
     <groupId>moe.arvin</groupId>
     <artifactId>KanonBot</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
     <name>KanonBot</name>
     <description>Music bot for Discord</description>
     <url/>
@@ -68,6 +68,7 @@
         </dependency>
     </dependencies>
     <build>
+        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
