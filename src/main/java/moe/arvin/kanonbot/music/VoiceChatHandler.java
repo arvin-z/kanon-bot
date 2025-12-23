@@ -1,6 +1,5 @@
 package moe.arvin.kanonbot.music;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
 import dev.arbjerg.lavalink.client.player.Track;
 import discord4j.core.object.VoiceState;
@@ -124,12 +123,8 @@ public class VoiceChatHandler {
         return voiceChannelJoined;
     }
 
-    public static EmbedCreateSpec getQueuedEmbed(Track track) {
-        JsonNode userData = track.getUserData();
-        if (!userData.has("userId")) {
-            return null; // Don't send an embed if there's no user data
-        }
-        String memID = userData.get("userId").asText();
+    public static EmbedCreateSpec getQueuedEmbed(Track track, Member mem) {
+        String memID = mem.getId().asString();
         EmbedCreateSpec.Builder builder = EmbedCreateSpec.builder();
         builder.color(Color.MOON_YELLOW);
         builder.description("Queued [" +
