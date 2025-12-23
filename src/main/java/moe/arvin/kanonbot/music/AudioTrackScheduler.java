@@ -70,6 +70,11 @@ public class AudioTrackScheduler {
         }
     }
 
+    public void queue(final Track track) {
+        queue.add(track);
+        persistQueue();
+    }
+
     public List<Track> getQueue() {
         return queue;
     }
@@ -248,22 +253,23 @@ public class AudioTrackScheduler {
     }
 
     public boolean play(final Track track, Member mem) {
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode userData = mapper.createObjectNode();
-        userData.put("userId", mem.getId().asString());
-        track.setUserData(userData);
+        if (mem != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode userData = mapper.createObjectNode();
+            userData.put("userId", mem.getId().asString());
+            track.setUserData(userData);
+        }
         return play(track, false, true);
     }
 
     public boolean play(final Track track, final boolean force, final boolean addToQueue) {
         if (addToQueue) {
-            queue.add(track);
+            queue(track);
             if (queue.size() == 1) {
                 targetIndex = 0;
             } else if (nowPlayingIdx == -1) {
                 targetIndex = queue.size() - 1;
             }
-            persistQueue();
         }
 
         AtomicBoolean isPlaying = new AtomicBoolean(false);
