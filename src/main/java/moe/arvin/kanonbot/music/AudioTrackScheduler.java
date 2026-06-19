@@ -34,6 +34,7 @@ public class AudioTrackScheduler {
 
     private Timer localLoopTimer;
     private boolean localLoopActive;
+    private static final long LOCAL_LOOP_CHECK_INTERVAL_MS = 200L;
 
     private final TextChatHandler textChat;
     Message playStartMsg;
@@ -420,22 +421,43 @@ public class AudioTrackScheduler {
     }
 
     public boolean localLoop(int s, int e) {
-        if (isPlaying()) {
-            int dur = e - s;
-            if (localLoopActive) {
-                localLoopTimer.cancel();
-                localLoopTimer = new Timer();
-            }
-            localLoopTimer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    seek(s);
-                }
-            }, 0, dur * 1000L);
-            localLoopActive = true;
-            return true;
+        final Link link = this.gAM.getOrCreateLink();
+        final LavalinkPlayer cPlayer = link.getCachedPlayer();
+        if (!isPlaying() || cPlayer == null) {
+            return false;
         }
-        return false;
+
+        final Track track = cPlayer.getTrack();
+        if (track == null) {
+            return false;
+        }
+
+        final long maxTrackPosition = Math.max(track.getInfo().getLength() - 1, 0);
+        final long loopStartMs = Math.min(Math.max(Math.abs((long) s) * 1000L, 0), maxTrackPosition);
+        final long loopEndMs = Math.min(Math.max(Math.abs((long) e) * 1000L, 0), track.getInfo().getLength());
+
+        if (loopEndMs <= loopStartMs) {
+            return false;
+        }
+
+        if (localLoopActive) {
+            localLoopTimer.cancel();
+            localLoopTimer = new Timer();
+        }
+
+        localLoopActive = true;
+        seekToPosition(loopStartMs);
+
+        localLoopTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (shouldRestartLocalLoop(getRelativePosition(), loopEndMs)) {
+                    seekToPosition(loopStartMs);
+                }
+            }
+        }, LOCAL_LOOP_CHECK_INTERVAL_MS, LOCAL_LOOP_CHECK_INTERVAL_MS);
+
+        return true;
     }
 
     public boolean localLoop() {
@@ -451,27 +473,7 @@ public class AudioTrackScheduler {
     }
 
     public boolean seek(int sec) {
-        final Link link = this.gAM.getOrCreateLink();
-        final LavalinkPlayer cPlayer = link.getCachedPlayer();
-        if (cPlayer == null) {
-            return false;
-        }
-        final Track track = cPlayer.getTrack();
-
-        if (isPlaying() && track != null) {
-            long s = Math.abs(sec);
-            long ms = s * 1000;
-            long dur = track.getInfo().getLength();
-            long safeSeek = Math.min(Math.max(ms, 0), dur-1);
-            positionBasis = safeSeek;
-
-            link.getPlayer()
-                    .flatMap((player) -> player.setPosition(safeSeek))
-                    .subscribe();
-
-            return true;
-        }
-        return false;
+        return seekToPosition(Math.abs((long) sec) * 1000L);
     }
 
     public boolean forwardOrRewind(int sec) {
@@ -488,13 +490,36 @@ public class AudioTrackScheduler {
             long currPos = getRelativePosition();
             long newPos = currPos + ms;
             long safePos = Math.min(Math.max(newPos, 0), dur-1);
-            positionBasis = safePos;
+            return seekToPosition(safePos);
+        }
+        return false;
+    }
+
+    private boolean seekToPosition(long positionMs) {
+        final Link link = this.gAM.getOrCreateLink();
+        final LavalinkPlayer cPlayer = link.getCachedPlayer();
+        if (cPlayer == null) {
+            return false;
+        }
+        final Track track = cPlayer.getTrack();
+
+        if (isPlaying() && track != null) {
+            long dur = track.getInfo().getLength();
+            long maxTrackPosition = Math.max(dur - 1, 0);
+            long safeSeek = Math.min(Math.max(positionMs, 0), maxTrackPosition);
+            positionBasis = safeSeek;
+
             link.getPlayer()
-                    .flatMap((player) -> player.setPosition(safePos))
+                    .flatMap((player) -> player.setPosition(safeSeek))
                     .subscribe();
+
             return true;
         }
         return false;
+    }
+
+    static boolean shouldRestartLocalLoop(long currentPositionMs, long loopEndMs) {
+        return currentPositionMs >= loopEndMs;
     }
 
     public boolean skip() {
