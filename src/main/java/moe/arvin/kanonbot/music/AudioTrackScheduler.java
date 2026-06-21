@@ -229,7 +229,7 @@ public class AudioTrackScheduler {
             throw new IllegalStateException("track is null!");
         }
 
-        long pos = player.getState().getPosition() - positionBasis;
+        long pos = player.getPosition() - positionBasis;
 
         double speed;
         Omissible<Timescale> timescaleOmissible = link.getCachedPlayer().getFilters().getTimescale();
@@ -239,7 +239,8 @@ public class AudioTrackScheduler {
             speed = 1.0;
         }
 
-        return (long)(pos * speed + positionBasis);
+        long relativePosition = (long)(pos * speed + positionBasis);
+        return Math.min(Math.max(relativePosition, 0), currTrack.getInfo().getLength());
     }
 
     public EmbedCreateSpec nowPlayingToEmbed() {
@@ -739,8 +740,10 @@ public class AudioTrackScheduler {
     }
 
     public static String makeProgressBar(long pos, long dur) {
-        double progress = ((double) pos / dur);
-        int progressIndex = (int) (progress * 20);
+        long safeDur = Math.max(dur, 1);
+        long safePos = Math.min(Math.max(pos, 0), safeDur);
+        double progress = ((double) safePos / safeDur);
+        int progressIndex = Math.min((int) (progress * 20), 20);
         StringBuilder sb = new StringBuilder();
         for (int i=0; i<20; i++) {
             if (i == progressIndex) {
@@ -751,7 +754,7 @@ public class AudioTrackScheduler {
         if (progressIndex == 20) {
             sb.append("\uD83D\uDD35");
         }
-        sb.append(" ").append(convertMsToTextHms(pos)).append(" / ").append(convertMsToTextHms(dur));
+        sb.append(" ").append(convertMsToTextHms(safePos)).append(" / ").append(convertMsToTextHms(dur));
         return sb.toString();
     }
 
