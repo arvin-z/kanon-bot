@@ -34,6 +34,8 @@ public class AudioTrackScheduler {
 
     private Timer localLoopTimer;
     private boolean localLoopActive;
+    private int localLoopStart;
+    private int localLoopEnd;
 
     private final TextChatHandler textChat;
     Message playStartMsg;
@@ -54,6 +56,8 @@ public class AudioTrackScheduler {
         this.textChat = txtChat;
         this.localLoopActive = false;
         this.localLoopTimer = new Timer();
+        this.localLoopStart = 0;
+        this.localLoopEnd = 0;
         this.positionBasis = 0;
         this.currentSpeed = 1.0;
         this.currentPitch = 1.0;
@@ -76,6 +80,48 @@ public class AudioTrackScheduler {
                     .collect(Collectors.toList());
             queuePersistenceService.saveQueue(gAM.getGuildId(), trackData);
         }
+    }
+
+    private void resetLocalLoopTimer() {
+        localLoopTimer.cancel();
+        localLoopTimer = new Timer();
+    }
+
+    private long getLocalLoopPeriodMillis() {
+        int durationSeconds = localLoopEnd - localLoopStart;
+        return Math.max(1L, Math.round(durationSeconds * 1000.0 / currentSpeed));
+    }
+
+    private void scheduleLocalLoopTimer(long initialDelayMillis) {
+        resetLocalLoopTimer();
+        localLoopTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                seek(localLoopStart);
+            }
+        }, Math.max(0L, initialDelayMillis), getLocalLoopPeriodMillis());
+    }
+
+    private void cancelLocalLoop() {
+        resetLocalLoopTimer();
+        localLoopActive = false;
+    }
+
+    private void updateLocalLoopTimer(long relativePosition) {
+        if (!localLoopActive) {
+            return;
+        }
+
+        long loopStartMillis = localLoopStart * 1000L;
+        long loopEndMillis = localLoopEnd * 1000L;
+        long initialDelayMillis;
+        if (relativePosition < loopStartMillis || relativePosition >= loopEndMillis) {
+            initialDelayMillis = 0;
+        } else {
+            initialDelayMillis = Math.round((loopEndMillis - relativePosition) / currentSpeed);
+        }
+
+        scheduleLocalLoopTimer(initialDelayMillis);
     }
 
     public void queue(final Track track) {
@@ -421,18 +467,10 @@ public class AudioTrackScheduler {
 
     public boolean localLoop(int s, int e) {
         if (isPlaying()) {
-            int dur = e - s;
-            if (localLoopActive) {
-                localLoopTimer.cancel();
-                localLoopTimer = new Timer();
-            }
-            localLoopTimer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    seek(s);
-                }
-            }, 0, dur * 1000L);
+            localLoopStart = s;
+            localLoopEnd = e;
             localLoopActive = true;
+            scheduleLocalLoopTimer(0);
             return true;
         }
         return false;
@@ -441,9 +479,7 @@ public class AudioTrackScheduler {
     public boolean localLoop() {
         if (isPlaying()) {
             if (localLoopActive) {
-                localLoopTimer.cancel();
-                localLoopTimer = new Timer();
-                localLoopActive = false;
+                cancelLocalLoop();
                 return true;
             }
         }
@@ -576,6 +612,7 @@ public class AudioTrackScheduler {
                     .subscribe();
 
             this.currentSpeed = multiplier;
+            updateLocalLoopTimer(positionBasis);
 
             return true;
         }
@@ -663,9 +700,7 @@ public class AudioTrackScheduler {
 
     public void onTrackEnd(Track lastTrack, AudioTrackEndReason endReason) {
         if (localLoopActive) {
-            localLoopTimer.cancel();
-            localLoopTimer = new Timer();
-            localLoopActive = false;
+            cancelLocalLoop();
         }
 
         // Use lastTrack instead of currentTrack
