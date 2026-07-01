@@ -34,8 +34,8 @@ public class AudioTrackScheduler {
 
     private Timer localLoopTimer;
     private boolean localLoopActive;
-    private int localLoopStart;
-    private int localLoopEnd;
+    private long localLoopStart;
+    private long localLoopEnd;
 
     private final TextChatHandler textChat;
     Message playStartMsg;
@@ -88,8 +88,8 @@ public class AudioTrackScheduler {
     }
 
     private long getLocalLoopPeriodMillis() {
-        int durationSeconds = localLoopEnd - localLoopStart;
-        return Math.max(1L, Math.round(durationSeconds * 1000.0 / currentSpeed));
+        long durationMillis = localLoopEnd - localLoopStart;
+        return Math.max(1L, Math.round(durationMillis / currentSpeed));
     }
 
     private void scheduleLocalLoopTimer(long initialDelayMillis) {
@@ -112,13 +112,11 @@ public class AudioTrackScheduler {
             return;
         }
 
-        long loopStartMillis = localLoopStart * 1000L;
-        long loopEndMillis = localLoopEnd * 1000L;
         long initialDelayMillis;
-        if (relativePosition < loopStartMillis || relativePosition >= loopEndMillis) {
+        if (relativePosition < localLoopStart || relativePosition >= localLoopEnd) {
             initialDelayMillis = 0;
         } else {
-            initialDelayMillis = Math.round((loopEndMillis - relativePosition) / currentSpeed);
+            initialDelayMillis = Math.round((localLoopEnd - relativePosition) / currentSpeed);
         }
 
         scheduleLocalLoopTimer(initialDelayMillis);
@@ -466,10 +464,10 @@ public class AudioTrackScheduler {
         return false;
     }
 
-    public boolean localLoop(int s, int e) {
+    public boolean localLoop(long startMillis, long endMillis) {
         if (isPlaying()) {
-            localLoopStart = s;
-            localLoopEnd = e;
+            localLoopStart = startMillis;
+            localLoopEnd = endMillis;
             localLoopActive = true;
             scheduleLocalLoopTimer(0);
             return true;
@@ -487,7 +485,7 @@ public class AudioTrackScheduler {
         return false;
     }
 
-    public boolean seek(int sec) {
+    public boolean seek(long positionMillis) {
         final Link link = this.gAM.getOrCreateLink();
         final LavalinkPlayer cPlayer = link.getCachedPlayer();
         if (cPlayer == null) {
@@ -496,8 +494,7 @@ public class AudioTrackScheduler {
         final Track track = cPlayer.getTrack();
 
         if (isPlaying() && track != null) {
-            long s = Math.abs(sec);
-            long ms = s * 1000;
+            long ms = Math.abs(positionMillis);
             long dur = track.getInfo().getLength();
             long safeSeek = Math.min(Math.max(ms, 0), dur-1);
             positionBasis = safeSeek;
@@ -511,7 +508,7 @@ public class AudioTrackScheduler {
         return false;
     }
 
-    public boolean forwardOrRewind(int sec) {
+    public boolean forwardOrRewind(long offsetMillis) {
         final Link link = this.gAM.getOrCreateLink();
         final LavalinkPlayer cPlayer = link.getCachedPlayer();
         if (cPlayer == null) {
@@ -520,10 +517,9 @@ public class AudioTrackScheduler {
         final Track track = cPlayer.getTrack();
 
         if (isPlaying() && track != null) {
-            int ms = sec * 1000;
             long dur = track.getInfo().getLength();
             long currPos = getRelativePosition();
-            long newPos = currPos + ms;
+            long newPos = currPos + offsetMillis;
             long safePos = Math.min(Math.max(newPos, 0), dur-1);
             positionBasis = safePos;
             link.getPlayer()

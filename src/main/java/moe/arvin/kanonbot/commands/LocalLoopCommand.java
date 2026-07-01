@@ -6,6 +6,7 @@ import discord4j.core.object.emoji.Emoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
+import moe.arvin.kanonbot.util.TimeParser;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -53,15 +54,18 @@ public class LocalLoopCommand implements Command {
             }
         }
         else {
-            int beginT;
-            int endT;
+            long beginT;
+            long endT;
             try {
-                String[] times = msgArg.split(" ");
-                beginT = Integer.parseInt(times[0]);
-                endT = Integer.parseInt(times[1]);
-            } catch (Exception e) {
+                String[] times = msgArg.trim().split("\\s+");
+                if (times.length != 2) {
+                    throw new NumberFormatException("expected 2 times");
+                }
+                beginT = TimeParser.secondsToMilliseconds(times[0]);
+                endT = TimeParser.secondsToMilliseconds(times[1]);
+            } catch (NumberFormatException | ArithmeticException e) {
                 TextChatHandler.sendErrorEmbedToMsgChannel(message,
-                        "You must give 2 valid times in seconds!");
+                        "You must give 2 valid times in seconds! Decimals are allowed.");
                 return Mono.empty();
             }
             if (endT <= beginT) {

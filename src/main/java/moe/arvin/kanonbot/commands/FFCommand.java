@@ -6,6 +6,7 @@ import discord4j.core.object.emoji.Emoji;
 import moe.arvin.kanonbot.music.GuildAudioManager;
 import moe.arvin.kanonbot.music.GuildAudioManagerFactory;
 import moe.arvin.kanonbot.music.TextChatHandler;
+import moe.arvin.kanonbot.util.TimeParser;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -42,15 +43,15 @@ public class FFCommand implements Command {
                     "You have to be connected to a voice channel before you can use this command!");
             return Mono.empty();
         }
-        int seconds;
+        long milliseconds;
         try {
-            seconds = Integer.parseInt(msgArg);
-        } catch (NumberFormatException e) {
+            milliseconds = TimeParser.secondsToMilliseconds(msgArg);
+        } catch (NumberFormatException | ArithmeticException e) {
             TextChatHandler.sendErrorEmbedToMsgChannel(message,
-                    "You must give a valid time in seconds!");
+                    "You must give a valid time in seconds! Decimals are allowed.");
             return Mono.empty();
         }
-        boolean forwarded = gAM.getScheduler().forwardOrRewind(seconds);
+        boolean forwarded = gAM.getScheduler().forwardOrRewind(milliseconds);
         if (forwarded) {
             return message.addReaction(Emoji.unicode("\uD83D\uDC4C"))
                     .then();
