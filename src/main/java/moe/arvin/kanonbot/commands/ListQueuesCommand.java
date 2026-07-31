@@ -34,12 +34,12 @@ public class ListQueuesCommand implements Command {
         long scopeId = SavedQueueCommandSupport.scopeId(message);
         return Mono.fromCallable(() -> savedQueueService.listNames(scopeId))
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(names -> SavedQueueCommandSupport.reply(message, formatNames(names)));
+                .flatMap(names -> SavedQueueCommandSupport.success(message, formatNames(names)));
     }
 
     static String formatNames(List<String> names) {
         if (names.isEmpty()) {
-            return "No queues have been saved here.";
+            return "No saved queues exist yet!";
         }
 
         StringBuilder result = new StringBuilder("Saved queues:\n");

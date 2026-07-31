@@ -38,12 +38,12 @@ public class SaveQueueCommand implements Command {
         try {
             name = savedQueueService.validateName(msgArg);
         } catch (IllegalArgumentException error) {
-            return SavedQueueCommandSupport.reply(message, error.getMessage());
+            return SavedQueueCommandSupport.error(message, error.getMessage());
         }
 
         Optional<Snowflake> guildId = message.getGuildId();
         if (guildId.isEmpty()) {
-            return SavedQueueCommandSupport.reply(
+            return SavedQueueCommandSupport.error(
                     message,
                     "There is no player queue in a DM. Use this command in the server whose queue you want to save."
             );
@@ -51,15 +51,15 @@ public class SaveQueueCommand implements Command {
 
         List<String> mediaUrls = audioManagerFactory.get(guildId.get()).getScheduler().getMediaUrls();
         if (mediaUrls.isEmpty()) {
-            return SavedQueueCommandSupport.reply(message, "The current queue is empty.");
+            return SavedQueueCommandSupport.error(message, "The current queue is empty!");
         }
 
         long scopeId = SavedQueueCommandSupport.scopeId(message);
         return Mono.fromRunnable(() -> savedQueueService.save(scopeId, name, mediaUrls))
                 .subscribeOn(Schedulers.boundedElastic())
-                .then(SavedQueueCommandSupport.reply(
+                .then(SavedQueueCommandSupport.success(
                         message,
-                        "Saved queue **" + name + "** with " + mediaUrls.size() + " track(s)."
+                        "Saved queue **" + name + "** with " + mediaUrls.size() + " track(s)!"
                 ));
     }
 }

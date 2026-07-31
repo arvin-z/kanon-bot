@@ -31,7 +31,7 @@ public class DeleteQueueCommand implements Command {
         try {
             name = savedQueueService.validateName(msgArg);
         } catch (IllegalArgumentException error) {
-            return SavedQueueCommandSupport.reply(message, error.getMessage());
+            return SavedQueueCommandSupport.error(message, error.getMessage());
         }
 
         long scopeId = SavedQueueCommandSupport.scopeId(message);
@@ -39,11 +39,11 @@ public class DeleteQueueCommand implements Command {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(deleted -> {
                     if (deleted) {
-                        return SavedQueueCommandSupport.reply(message, "Deleted saved queue **" + name + "**.");
+                        return SavedQueueCommandSupport.success(message, "Deleted saved queue **" + name + "**");
                     }
-                    return SavedQueueCommandSupport.reply(
+                    return SavedQueueCommandSupport.error(
                             message,
-                            "No saved queue named **" + name + "** was found."
+                            "No saved queue named **" + name + "** was found!"
                     );
                 });
     }

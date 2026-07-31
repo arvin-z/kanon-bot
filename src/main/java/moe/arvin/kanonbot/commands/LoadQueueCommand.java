@@ -39,12 +39,12 @@ public class LoadQueueCommand implements Command {
         try {
             name = savedQueueService.validateName(msgArg);
         } catch (IllegalArgumentException error) {
-            return SavedQueueCommandSupport.reply(message, error.getMessage());
+            return SavedQueueCommandSupport.error(message, error.getMessage());
         }
 
         Optional<Snowflake> guildId = message.getGuildId();
         if (guildId.isEmpty()) {
-            return SavedQueueCommandSupport.reply(
+            return SavedQueueCommandSupport.error(
                     message,
                     "There is no player queue in a DM. Use this command in a server to load music."
             );
@@ -58,7 +58,10 @@ public class LoadQueueCommand implements Command {
         GuildAudioManager audioManager = audioManagerFactory.get(guildId.get());
         return savedQueue.flatMap(queue -> {
             if (queue.isEmpty()) {
-                return SavedQueueCommandSupport.reply(message, "No saved queue named **" + name + "** was found.");
+                return SavedQueueCommandSupport.error(
+                        message,
+                        "No saved queue named **" + name + "** was found."
+                );
             }
 
             SavedQueue foundQueue = queue.get();
@@ -74,10 +77,13 @@ public class LoadQueueCommand implements Command {
                         if (failedCount > 0) {
                             response += " " + failedCount + " track(s) could not be loaded.";
                         }
-                        return SavedQueueCommandSupport.reply(message, response);
+                        if (loadedCount == 0) {
+                            return SavedQueueCommandSupport.error(message, response);
+                        }
+                        return SavedQueueCommandSupport.success(message, response);
                     })
                     .onErrorResume(IllegalStateException.class,
-                            error -> SavedQueueCommandSupport.reply(message, error.getMessage()));
+                            error -> SavedQueueCommandSupport.error(message, error.getMessage()));
         });
     }
 }
