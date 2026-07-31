@@ -131,6 +131,16 @@ public class AudioTrackScheduler {
         return queue;
     }
 
+    public List<String> getMediaUrls() {
+        synchronized (queue) {
+            return queue.stream()
+                    .map(track -> track.getInfo().getUri())
+                    .filter(Objects::nonNull)
+                    .filter(url -> !url.isBlank())
+                    .toList();
+        }
+    }
+
     public void shuffleQueue() {
         if (!isPlaying()) {
             Collections.shuffle(queue);

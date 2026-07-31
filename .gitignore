@@ -43,3 +43,5 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
+### Local H2 database ###
+/data/

@@ -39,6 +39,7 @@ public class QueueLoader implements CommandLineRunner {
     @Override
     public void run(String @NonNull ... args) {
         log.info("Starting queue loading process...");
+        queuePersistenceService.migrateLegacyQueues();
         List<Long> savedGuildIds = queuePersistenceService.getAllSavedGuildIds();
 
         Flux.fromIterable(savedGuildIds)
@@ -47,7 +48,7 @@ public class QueueLoader implements CommandLineRunner {
                             if (isMember) {
                                 return loadGuildQueue(guildId);
                             } else {
-                                log.info("Bot is no longer in guild {}, deleting queue file.", guildId);
+                                log.info("Bot is no longer in guild {}, deleting its restart queue.", guildId);
                                 queuePersistenceService.deleteQueue(guildId);
                                 return Mono.empty();
                             }
@@ -69,7 +70,7 @@ public class QueueLoader implements CommandLineRunner {
         AudioTrackScheduler scheduler = gAM.getScheduler();
 
         return Flux.fromIterable(trackDataList)
-                .flatMap(trackData -> loadAndPrepareTrack(guildId, trackData))
+                .concatMap(trackData -> loadAndPrepareTrack(guildId, trackData))
                 .doOnNext(scheduler::queue)
                 .then();
     }

@@ -1,7 +1,10 @@
 package moe.arvin.kanonbot.music;
 
 import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
+import dev.arbjerg.lavalink.client.player.PlaylistLoaded;
+import dev.arbjerg.lavalink.client.player.SearchResult;
 import dev.arbjerg.lavalink.client.player.Track;
+import dev.arbjerg.lavalink.client.player.TrackLoaded;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -12,7 +15,10 @@ import discord4j.rest.util.Color;
 import moe.arvin.kanonbot.util.URLUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -200,6 +206,44 @@ public class VoiceChatHandler {
                 .loadItem(trackArg)
                 .subscribe(new AudioLoader(this.gAM, this.textChan, mem));
         return true;
+    }
+
+    public Mono<Integer> loadSavedQueue(Member member, List<String> mediaUrls, MessageChannel messageChannel) {
+        return member.getVoiceState()
+                .flatMap(VoiceState::getChannel)
+                .switchIfEmpty(Mono.error(new IllegalStateException(
+                        "You have to be connected to a voice channel before you can use this command!"
+                )))
+                .flatMap(voiceChannel -> {
+                    if (!voiceChannelJoined) {
+                        joinVoiceChannel(voiceChannel);
+                    }
+                    textChan.setActiveTextChannel(messageChannel);
+
+                    return Flux.fromIterable(mediaUrls)
+                            .concatMap(url -> gAM.getOrCreateLink()
+                                    .loadItem(url)
+                                    .flatMap(loadResult -> {
+                                        Track track = null;
+                                        if (loadResult instanceof TrackLoaded loaded) {
+                                            track = loaded.getTrack();
+                                        } else if (loadResult instanceof SearchResult result
+                                                && !result.getTracks().isEmpty()) {
+                                            track = result.getTracks().get(0);
+                                        } else if (loadResult instanceof PlaylistLoaded playlist
+                                                && !playlist.getTracks().isEmpty()) {
+                                            track = playlist.getTracks().get(0);
+                                        }
+                                        return Mono.justOrEmpty(track);
+                                    })
+                                    .doOnNext(track -> gAM.getScheduler().play(track, member))
+                                    .onErrorResume(error -> {
+                                        LOG.warn("Failed to load saved queue URL {}: {}", url, error.getMessage());
+                                        return Mono.empty();
+                                    }))
+                            .count()
+                            .map(Math::toIntExact);
+                });
     }
 
     @SuppressWarnings("unused")
