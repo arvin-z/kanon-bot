@@ -11,7 +11,7 @@ class ListQueuesCommandTests {
     @Test
     void formatsEmptyAndPopulatedQueueLists() {
         assertThat(ListQueuesCommand.formatNames(List.of()))
-                .isEqualTo("No queues have been saved here.");
+                .isEqualTo("No saved queues exist yet!");
         assertThat(ListQueuesCommand.formatNames(List.of("Favorites", "Road Trip")))
                 .isEqualTo("Saved queues:\n- Favorites\n- Road Trip");
     }
