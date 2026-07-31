@@ -88,6 +88,16 @@ public class SavedQueueService {
         return Optional.of(new SavedQueue(names.get(0), List.copyOf(mediaUrls)));
     }
 
+    @Transactional
+    public boolean delete(long scopeId, String name) {
+        String displayName = validateName(name);
+        return jdbcTemplate.update(
+                "DELETE FROM saved_queue WHERE scope_id = ? AND normalized_name = ?",
+                scopeId,
+                normalize(displayName)
+        ) > 0;
+    }
+
     public String validateName(String name) {
         String trimmedName = name == null ? "" : name.trim();
         if (trimmedName.isEmpty()) {

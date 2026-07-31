@@ -23,6 +23,7 @@ A Discord bot for playing music via LavaLink, built with Spring Framework and Di
 - savequeue
 - listqueues
 - loadqueue
+- deletequeue
 - clear
 - shuffle
 - remove
@@ -46,5 +47,4 @@ A Discord bot for playing music via LavaLink, built with Spring Framework and Di
 ## Troubleshooting
 
 If you hare having trouble with YouTube videos (and not with other sources), YouTube is likely blocking access to your LavaLink server based on IP address. To fix this you can try several different options: you could run your LavaLink server through a residential (or another IP that isn't blacklisted) proxy. You could also try [LavaLink's IPv6 rotation feature](https://blog.arbjerg.dev/2020/3/tunnelbroker-with-lavalink), or [use PO Tokens](https://github.com/lavalink-devs/youtube-source?tab=readme-ov-file#using-a-potoken).
-
 

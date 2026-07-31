@@ -62,6 +62,17 @@ class SavedQueueServiceTests {
     }
 
     @Test
+    void deletesCaseInsensitivelyWithoutAffectingOtherScopes() {
+        service.save(10L, "Favorites", List.of("https://example.com/one"));
+        service.save(20L, "Favorites", List.of("https://example.com/two"));
+
+        assertThat(service.delete(10L, "FAVORITES")).isTrue();
+        assertThat(service.delete(10L, "favorites")).isFalse();
+        assertThat(service.find(10L, "Favorites")).isEmpty();
+        assertThat(service.find(20L, "Favorites")).isPresent();
+    }
+
+    @Test
     void rejectsEmptyQueuesAndUnsafeNames() {
         assertThatThrownBy(() -> service.save(10L, "Empty", List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
