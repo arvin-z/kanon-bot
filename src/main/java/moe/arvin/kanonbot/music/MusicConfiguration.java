@@ -44,8 +44,8 @@ public class MusicConfiguration {
         for (LavalinkListener<T> listener : lavalinkListeners) {
 
             lavalinkClient.on(listener.getEventType())
-                    .flatMap(listener::execute)
-                    .onErrorResume(listener::handleError)
+                    .flatMap(event -> listener.execute(event)
+                            .onErrorResume(listener::handleError))
                     .subscribe();
         }
 

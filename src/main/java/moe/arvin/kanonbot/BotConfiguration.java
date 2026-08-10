@@ -43,8 +43,8 @@ public class BotConfiguration {
         for (EventListener<T> listener : eventListeners) {
 
             discordClient.on(listener.getEventType())
-                    .flatMap(listener::execute)
-                    .onErrorResume(listener::handleError)
+                    .flatMap(event -> listener.execute(event)
+                            .onErrorResume(listener::handleError))
                     .subscribe();
         }
 

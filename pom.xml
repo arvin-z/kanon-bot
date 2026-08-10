@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.5</version>
+        <version>4.1.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>moe.arvin</groupId>
     <artifactId>KanonBot</artifactId>
-    <version>1.5.2</version>
+    <version>1.5.3</version>
     <name>KanonBot</name>
     <description>Music bot for Discord</description>
     <url/>
